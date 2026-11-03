@@ -25,6 +25,7 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from agent import Analyst, LLM, State
@@ -245,6 +246,12 @@ async def lifespan(app):
 
 
 app = FastAPI(title="Lodestar 2026", version="1.0.0", lifespan=lifespan)
+
+# Candidate portraits live in public/ so Vercel serves them straight from its CDN;
+# this mount is what makes them work locally and in the container.
+PUBLIC = ROOT / "public"
+if (PUBLIC / "portraits").is_dir():
+    app.mount("/portraits", StaticFiles(directory=PUBLIC / "portraits"), name="portraits")
 
 
 @app.get("/")

@@ -133,6 +133,12 @@ main{padding:20px 0 40px}
 .race:hover,.race:focus-visible{background:var(--wash);outline:none}
 .race .nm{font-weight:600;font-size:14.5px}
 .race .mu{font-size:12.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* candidate portraits: real photo when we have one, party-coloured initials otherwise */
+.av{display:inline-block;vertical-align:middle;object-fit:cover;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:50%;flex:0 0 auto}
+.av.fb{display:inline-grid;place-items:center;color:#fff;font-weight:650;line-height:1;
+  letter-spacing:.02em;border:0;font-family:inherit}
+.who{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;max-width:100%}
 .race .pr{font-size:13px;font-variant-numeric:tabular-nums}
 .race .pr b{font-size:15px}
 .race .pl{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
@@ -361,7 +367,7 @@ footer{border-top:1px solid var(--border);padding:18px 0 30px;color:var(--ink-2)
 <script>
 "use strict";
 /* ===================================================================== state */
-const S={f:null,live:null,mode:"static",health:null,frames:null,frameIx:0,byId:{},chat:[],houseShown:40};
+const S={f:null,live:null,mode:"static",health:null,frames:null,frameIx:0,byId:{},chat:[],houseShown:40,portraits:null};
 const $=s=>document.querySelector(s);
 const NS="http://www.w3.org/2000/svg";
 function h(tag,attrs,...kids){const e=document.createElement(tag);for(const k in (attrs||{})){const v=attrs[k];if(v==null||v===false)continue;
@@ -375,6 +381,27 @@ function pctSmart(p){if(p==null)return"—";const x=100*p;if(x>99&&x<100)return"
 function mfmt(m,d=1){if(m==null||isNaN(m))return"—";if(Math.abs(m)<0.05)return"Even";return(m>0?"D+":"R+")+Math.abs(m).toFixed(d);}
 function side(r,which){const sd=which==="d"?r.d_side:r.r_side;return sd==="IND"?"I":which==="d"?"D":"R";}
 function lastName(n){if(!n)return"—";const t=n.replace(/\(.*?\)/g,"").trim().split(/\s+/);let x=t[t.length-1];if(/^(jr\.?|sr\.?|ii|iii|iv)$/i.test(x)&&t.length>1)x=t[t.length-2];return x;}
+/* ---- portraits: Wikipedia lead images, keyed by race + side; fall back to initials */
+function portrait(r,side){const m=S.portraits&&S.portraits.races;const e=m&&m[r.id]&&m[r.id][side];
+  return e&&e.img&&e.name===r[side+"_cand"]?e:null;}
+function initials(n){const t=(n||"").replace(/\(.*?\)/g,"").trim().split(/\s+/).filter(Boolean);
+  return ((t[0]||"?")[0]+((t.length>1?t[t.length-1]:"")[0]||"")).toUpperCase();}
+function avFallback(r,side,dim){const nm=r[side+"_cand"]||"";
+  return h("span",{class:"av fb",style:dim+`;background:${partyColor(r[side+"_side"])}`,title:nm,"aria-label":nm},initials(nm));}
+function avatar(r,side,px,extra){const e=portrait(r,side),s=px||28;
+  const dim=`width:${s}px;height:${s}px;font-size:${Math.max(9,Math.round(s*0.38))}px;${extra||""}`;
+  if(e){const img=h("img",{class:"av",src:e.img,alt:e.name,loading:"lazy",decoding:"async",style:dim,
+    title:`${e.name}${e.author?" · photo: "+e.author:""}${e.license?" ("+e.license+")":""}`});
+    // a missing or blocked image must not leave a broken-icon hole
+    img.addEventListener("error",()=>img.replaceWith(avFallback(r,side,dim)),{once:true});
+    return img;}
+  return avFallback(r,side,dim);}
+function who(r,which,px){return h("span",{class:"who"},avatar(r,which,px)," ",`${lastName(r[which+"_cand"])} (${side(r,which)})`);}
+function candCard(r,side){const nm=r[side+"_cand"],sd=r[side+"_side"],p=side==="d"?r.p_d:r.p_r;
+  return h("div",{style:"display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 220px"},
+    avatar(r,side,60),
+    h("div",{style:"min-width:0"},h("div",{style:"font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"},nm),
+      h("div",{class:"muted",style:"font-size:12px"},`${sd==="IND"?"Independent":sd==="D"?"Democrat":"Republican"} · ${pctSmart(p)} to win`)));}
 const BINS=[["sd",.95,"Safe D"],["ld",.8,"Likely D"],["nd",.6,"Lean D"],["tu",.4,"Toss-up"],["nr",.2,"Lean R"],["lr",.05,"Likely R"],["sr",-1,"Safe R"]];
 function bin(p){for(const b of BINS)if(p>=b[1])return b;return BINS[6];}
 function fillFor(r){const b=bin(r.p_d);if(r.d_side==="IND"&&r.p_d>=.5)return{bg:"var(--ind)",fg:"#fff",label:b[2].replace("D","I")};return{bg:`var(--${b[0]})`,fg:`var(--${b[0]}-ink)`,label:b[2]};}
@@ -461,7 +488,7 @@ function raceRow(r){
   const flip=r.p_flip!=null&&r.p_flip>=.5;
   const row=h("div",{class:"race",tabindex:0,role:"button","aria-label":`${raceTitle(r)}: ${fav.name} ${pct(fav.p)}`,onclick:()=>openRace(r.id),onkeydown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openRace(r.id);}}},
     h("div",null,h("div",{class:"nm"},raceTitle(r),flip?h("span",{class:"badge flip"},"FLIP"):null),
-      h("div",{class:"mu"},`${lastName(r.d_cand)} (${side(r,"d")})${inc&&r.holder==="D"?"*":""} vs ${lastName(r.r_cand)} (${side(r,"r")})${inc&&r.holder==="R"?"*":""}`)),
+      h("div",{class:"mu"},who(r,"d",22),inc&&r.holder==="D"?"*":""," vs ",who(r,"r",22),inc&&r.holder==="R"?"*":"")),
     h("div",{class:"pr"},h("div",null,h("b",null,pctSmart(fav.p))," ",h("span",{class:"muted"},lastName(fav.name)+" ("+fs+")")),probBar(r)),
     h("div",{class:"c3"},h("div",{class:"pl"},mfmt(r.margin.mean)+"  ",h("span",{class:"muted"},`(${mfmt(r.margin.p10,0)} to ${mfmt(r.margin.p90,0)})`)),marginWhisker(r)),
     h("div",{class:"c4 pl"},r.polls?`${mfmt(r.polls.avg)} avg`:"No public polls",r.polls?h("div",{class:"muted"},`${r.polls.n_polls} polls · ${r.polls.core_n} top-20`):null));
@@ -580,7 +607,8 @@ function openRace(id){const r=S.byId[id];if(!r)return;hideTip();const b=$("#dBod
   const fav=favored(r);
   b.append(h("div",{class:"eyebrow"},r.chamber==="house"?`${r.state_name} · House`:r.chamber==="governor"?"Governor":"Senate"),
     h("h2",{id:"dTitle",style:"margin:4px 0 2px;font-size:22px"},raceTitle(r)),
-    h("p",{class:"sub"},`${r.d_cand} (${side(r,"d")}) vs ${r.r_cand} (${side(r,"r")})${r.incumbent?` · incumbent: ${r.incumbent}`:""}${r.holder?` · seat held by ${r.holder}`:""}`),
+    h("p",{class:"sub"},`${r.incumbent?`incumbent: ${r.incumbent} · `:""}${r.holder?`seat held by ${r.holder}`:""}`),
+    h("div",{style:"display:flex;gap:18px;flex-wrap:wrap;margin:12px 0 4px"},candCard(r,"d"),candCard(r,"r")),
     h("div",{style:"display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"},h("div",{style:"font-size:44px;font-weight:650;letter-spacing:-.02em"},pctSmart(fav.p)),h("div",{style:"font-size:15px"},`chance ${fav.name} wins`)),
     probBar(r),h("div",{class:"legend"},h("span",null,h("i",{class:"sw",style:`background:${partyColor(r.d_side)}`}),`${lastName(r.d_cand)} ${pctSmart(r.p_d)}`),h("span",null,h("i",{class:"sw",style:`background:${partyColor(r.r_side)}`}),`${lastName(r.r_cand)} ${pctSmart(r.p_r)}`)));
   const live=S.live&&S.live.races&&S.live.races[id];
@@ -683,7 +711,7 @@ function renderLive(){
   const tb=$("#liveTable");tb.replaceChildren(h("thead",null,h("tr",null,h("th",null,"Race"),h("th",null,"Status"),h("th",null,"Reporting"),h("th",{class:"num"},"Counted"),h("th",{class:"num"},"Proj. final"),h("th",{class:"num"},"Live D chance"),h("th",{class:"num"},"Pre-election"))),
     h("tbody",null,...rs.map(r=>{const nc=L&&L.races&&L.races[r.id];const st=nc?nc.status:"awaiting";let cls=st,lab=st==="counting"?"Counting":st==="called"?"Called":"Awaiting";
       if(st==="called"){const w=nc.p_d>=.5?(r.d_side==="IND"?"i":"d"):"r";cls="called-"+w;lab=`Called ${w.toUpperCase()}`;}
-      const liveP=nc?nc.p_d:null;return h("tr",{style:"cursor:pointer",onclick:()=>openRace(r.id)},h("td",{style:"white-space:nowrap"},h("b",null,r.chamber==="house"?r.label:r.state_name+(r.special?" (sp.)":"")),h("div",{class:"muted",style:"font-size:12px"},`${lastName(r.d_cand)} vs ${lastName(r.r_cand)}`)),
+      const liveP=nc?nc.p_d:null;return h("tr",{style:"cursor:pointer",onclick:()=>openRace(r.id)},h("td",{style:"white-space:nowrap"},h("b",null,r.chamber==="house"?r.label:r.state_name+(r.special?" (sp.)":"")),h("div",{class:"muted",style:"font-size:12px;display:flex;align-items:center;gap:5px"},avatar(r,"d",18),lastName(r.d_cand),h("span",null,"vs"),avatar(r,"r",18),lastName(r.r_cand))),
         h("td",null,h("span",{class:"status "+cls},lab)),h("td",null,h("div",{class:"prog",role:"img","aria-label":`${nc?nc.pct_reporting:0}% reporting`},h("i",{style:`width:${nc?nc.pct_reporting:0}%`})),h("span",{class:"muted",style:"font-size:11.5px"},nc?nc.pct_reporting+"%":"0%")),
         h("td",{class:"num"},nc&&nc.counted_margin!=null?mfmt(nc.counted_margin):"—"),h("td",{class:"num"},nc&&nc.est_margin!=null?mfmt(nc.est_margin):mfmt(r.margin.mean)),
         h("td",{class:"num"},liveP==null?"—":pctSmart(liveP)),h("td",{class:"num muted"},pctSmart(r.p_d)));})));
@@ -758,7 +786,9 @@ function renderMethod(){const m=S.f.meta;
     h("p",null,"Metrics: Brier score and log loss (calibrated probabilities), share of favorites that won, margin error and bias, and whether 80% ranges caught ~80% of results."),
     h("h3",{style:"margin-top:16px"},"Sources"),h("ul",{class:"sub"},...m.attribution.map(a=>h("li",null,a)),h("li",null,"Live results (when running): civicAPI (civicapi.org)")));
   $("#foot").replaceChildren(h("div",null,`Lodestar ${m.version} · forecast as of ${m.as_of} (latest poll ${m.latest_poll}) · ${m.n_sims.toLocaleString()} simulations · `,
-    "Probabilities, not predictions: favorites at 70% lose three times in ten."),h("div",{style:"margin-top:4px"},m.attribution.join(" · ")));}
+    "Probabilities, not predictions: favorites at 70% lose three times in ten."),h("div",{style:"margin-top:4px"},m.attribution.join(" · ")),
+    (S.portraits&&S.portraits.candidates)?h("div",{style:"margin-top:4px"},"Candidate portraits: Wikipedia lead images via Wikimedia Commons — ",
+      h("a",{href:"/portraits/ATTRIBUTION.md",target:"_blank",rel:"noopener"},"per-photo credits")," (each image keeps its own licence)."):null);}
 
 /* ===================================================================== shell */
 const STN={AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming"};
@@ -780,8 +810,9 @@ try{const t=localStorage.getItem("lodestar-theme");if(t)document.documentElement
 let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>renderView(S.view),150);});
 addEventListener("hashchange",route);
 async function boot(){
-  if(window.__LODESTAR__){S.f=window.__LODESTAR__.forecast;S.frames=window.__LODESTAR__.demo_frames||[];S.mode="static";}
-  else{try{S.f=await (await fetch("/api/forecast")).json();S.mode="server";S.health=await (await fetch("/api/health")).json();}catch(e){document.body.textContent="Could not load forecast: "+e.message;return;}}
+  if(window.__LODESTAR__){S.f=window.__LODESTAR__.forecast;S.frames=window.__LODESTAR__.demo_frames||[];S.portraits=window.__LODESTAR__.portraits||null;S.mode="static";}
+  else{try{S.f=await (await fetch("/api/forecast")).json();S.mode="server";S.health=await (await fetch("/api/health")).json();}catch(e){document.body.textContent="Could not load forecast: "+e.message;return;}
+    try{S.portraits=await (await fetch("/portraits/index.json")).json();}catch(e){S.portraits=null;}}
   S.f.races.forEach(r=>S.byId[r.id]=r);
   $("#asof").textContent=`Forecast as of ${S.f.meta.as_of} · election Nov 3`;setPill();renderMethod();route();
   if(S.mode==="server"){pollLive();setInterval(pollLive,15000);}

@@ -43,7 +43,10 @@ def main():
         frames.append({"label": label, "live": compact_live(L, f)})
     for r in f["races"]:                      # keep the page light: newest 30 polls per race
         r["poll_list"] = r["poll_list"][:30]
-    payload = json.dumps({"forecast": f, "demo_frames": frames}, separators=(",", ":"))
+    # portraits travel with the page; images themselves need public/ next to it
+    portraits = ROOT / "public" / "portraits" / "index.json"
+    pdata = json.loads(portraits.read_text()) if portraits.exists() else None
+    payload = json.dumps({"forecast": f, "demo_frames": frames, "portraits": pdata}, separators=(",", ":"))
     payload = payload.replace("</", "<\\/")   # never let data close the script tag
     html = (ROOT / "dashboard" / "index.html").read_text()
     marker = '<script>\n"use strict";'

@@ -1,0 +1,2 @@
+-r requirements.txt
+pillow>=10        # only for scripts/fetch_portraits.py (image cropping)

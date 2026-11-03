@@ -167,6 +167,28 @@ If you know the count order in a state (for example, late mail that leans Democr
 `LiveParams.count_order_bias` in code or post it with the source:
 `POST /api/live/source {"source":"civicapi","count_order_bias":{"ME":1.5}}`.
 
+## Candidate portraits
+
+Race rows and the race drawer show each candidate's official/public portrait where one
+exists, and a party-coloured initials badge otherwise — a missing photo never leaves a hole.
+
+```bash
+pip install -r requirements-dev.txt        # adds Pillow for the crop step
+python scripts/fetch_portraits.py          # rebuild public/portraits/
+```
+
+The script resolves each `(candidate, state, office)` against Wikipedia with a scored match
+(a surname plus a state or office mention is required, so an obscure challenger is left
+without a photo rather than given a stranger's face), downloads the article's lead image,
+crops it to 4:5 at 240x300 and writes a WebP. It is resumable: resolutions and downloads are
+cached in `output/portraits_cache.json`.
+
+Attribution matters: every file keeps its original licence. `public/portraits/index.json`
+records the article, file, author and licence per candidate, and
+`public/portraits/ATTRIBUTION.md` is the human-readable credits list (linked from the
+dashboard footer). The images live in `public/`, so Vercel serves them from its CDN and the
+FastAPI app mounts the same directory locally.
+
 ## Testing the model after Tuesday
 
 ```bash

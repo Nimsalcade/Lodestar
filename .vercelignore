@@ -14,3 +14,4 @@ output/scorecard.md
 .DS_Store
 **/.DS_Store
 .ghconfig
+output/portraits_cache.json

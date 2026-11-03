@@ -9,6 +9,10 @@
 | Pollster ratings (fallback) | FiveThirtyEight pollster ratings, 2024 | CC BY 4.0 |
 | Campaign finance | Federal Election Commission | public domain |
 | Election-night results (when enabled) | civicAPI (civicapi.org) | attribution required: "Results and race calls: civicAPI (civicapi.org)" |
+| Candidate portraits (`public/portraits/`) | Wikipedia article lead images, fetched from Wikimedia Commons | each image keeps its own licence (usually CC BY-SA or public domain); author and licence are recorded per image in `public/portraits/index.json` and `public/portraits/ATTRIBUTION.md` |
+
+Portraits are cropped and re-encoded for display; the adapted images remain under their original
+licences, and the credits file travels with them. Remove a candidate image if its subject asks.
 
 Because the inputs include CC BY-SA material, Lodestar's derived data (`data/`, `output/`) is
 released under **CC BY-SA 4.0**. The code is MIT-licensed (`LICENSE`).
