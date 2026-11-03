@@ -115,10 +115,9 @@ What changes on a serverless host:
   per-instance (civicAPI refreshes replace the whole snapshot, so instances converge);
 - `POST /api/results` is therefore instance-local, not a shared board;
 - civicAPI's first **uncached** query takes ~10–15 s while warm calls take ~0.2 s (the
-  client requests gzip). On Vercel the feed therefore uses an 8 s timeout and a single
-  attempt, so a cold request returns a clear `last_error` for the dashboard to retry
-  rather than tripping the platform timeout; raise `CIVICAPI_TIMEOUT` if your plan allows
-  longer-running Functions;
+  client requests gzip). On Vercel the feed allows 30 s for that first query with a
+  single attempt, so the first live poll can take ~15 s and later ones on the same
+  instance are instant; raise `CIVICAPI_TIMEOUT` if you change the Function budget;
 - `/api/forecast` is ~1 MB, comfortably under Vercel's response limit.
 
 For uninterrupted 30-second polling on election night, the container deployment is the

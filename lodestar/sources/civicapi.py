@@ -38,9 +38,10 @@ ATTRIBUTION = "Results and race calls: civicAPI (civicapi.org)"
 TYPES = {"US Senate": "senate", "House of Representatives": "house", "Governor": "governor"}
 QUERIES = ({"election_type": "General"}, {"query": "Governor", "election_type": "Statewide"})
 
-# On a serverless host the platform may cap a request at ~10 s, so time out below
-# that and let the next poll retry: a timed-out query still warms civicAPI's cache.
-TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "8" if os.getenv("VERCEL") else "20"))
+# civicAPI's first uncached query can take 10-15 s; warm calls are ~0.2 s. On
+# serverless, allow enough headroom to finish that first query (Vercel Functions
+# run up to 300 s on Hobby) and let the next poll retry a transient failure.
+TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "30" if os.getenv("VERCEL") else "20"))
 RETRIES = int(os.getenv("CIVICAPI_RETRIES", "1" if os.getenv("VERCEL") else "3"))
 
 
