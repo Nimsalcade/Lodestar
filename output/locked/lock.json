@@ -1,0 +1,14 @@
+{
+  "locked_utc": "2026-11-02T16:08:34Z",
+  "as_of": "2026-11-02",
+  "model": "Lodestar 1.0.0",
+  "forecast_sha256": "7e5771e66ef971a06d33d7cdc004ded52e7900c70f6c76acb5c883f27d638a68",
+  "predictions_sha256": "c3ba904ee3a4e4f2055abcf8c2a2a0e7a76f76a3526b3abb547823b6997664ac",
+  "headline": {
+    "senate_p_d_control": 0.7477,
+    "house_p_d_control": 0.874475,
+    "governor_p_d_majority": 0.796575,
+    "senate_d_median": 53.0,
+    "house_d_median": 236.0
+  }
+}

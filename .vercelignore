@@ -1,0 +1,16 @@
+.venv
+.venv/**
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+.env
+.git
+dist
+output/live.json
+output/live_state.json
+output/scorecard.json
+output/scorecard.md
+.DS_Store
+**/.DS_Store
+.ghconfig

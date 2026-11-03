@@ -1,0 +1,7 @@
+numpy>=1.26
+pandas>=2.1
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.5
+openai>=1.30        # OpenAI-compatible client used for both DeepSeek API and Ollama
+pytest>=8           # tests only

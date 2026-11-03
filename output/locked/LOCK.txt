@@ -1,0 +1,7 @@
+Lodestar 2026 pre-election forecast lock
+locked (UTC):        2026-11-02T16:08:34Z
+forecast as of:      2026-11-02
+forecast sha256:     7e5771e66ef971a06d33d7cdc004ded52e7900c70f6c76acb5c883f27d638a68  forecast_2026-11-02.json
+predictions sha256:  c3ba904ee3a4e4f2055abcf8c2a2a0e7a76f76a3526b3abb547823b6997664ac  predictions_2026-11-02.csv
+
+Verify:  sha256sum output/locked/forecast_2026-11-02.json output/locked/predictions_2026-11-02.csv
