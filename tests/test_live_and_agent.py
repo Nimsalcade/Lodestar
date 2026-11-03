@@ -302,3 +302,34 @@ def test_explicit_ollama_provider_is_used(monkeypatch):
     monkeypatch.setenv("OLLAMA_MODEL", "deepseek-r1:8b")
     cfg = LLMConfig.from_env()
     assert cfg.provider == "ollama" and cfg.model == "deepseek-r1:8b" and LLM(cfg).enabled
+
+
+def test_nowcast_reports_vote_totals_and_its_own_call():
+    """The live card needs counted/expected/remaining votes and a call the model owns."""
+    from lodestar.live import LiveParams, nowcast_race
+
+    race = next(r for r in FORECAST["races"] if r["id"] == "senate:ME")
+    lp = LiveParams()
+
+    empty = nowcast_race(race, {"status": "counting", "pct_reporting": 0}, lp)
+    assert empty["counted_votes"] == 0 and empty["expected_votes"] is None
+    assert empty["call"]["projected"] is False and empty["call"]["source_called"] is False
+
+    early = nowcast_race(race, {"status": "counting", "d_votes": 600, "r_votes": 400,
+                                "pct_reporting": 10}, lp)
+    assert early["counted_votes"] == 1000 and early["expected_votes"] == 10000
+    assert early["remaining_votes"] == 9000
+    # a big lead with only 10% counted is not a projection
+    assert early["call"]["projected"] is False
+
+    late = nowcast_race(race, {"status": "counting", "d_votes": 9000, "r_votes": 5000,
+                               "other_votes": 100, "pct_reporting": 90}, lp)
+    assert late["counted_votes"] == 14100 and late["expected_votes"] > late["counted_votes"]
+    assert late["shares"]["d"] > late["shares"]["r"]
+    assert late["call"]["projected"] is True and late["call"]["winner"] in ("D", "IND")
+    assert 0.985 <= late["call"]["confidence"] <= 1.0
+
+    called = nowcast_race(race, {"status": "called", "winner": "D", "d_votes": 9500,
+                                 "r_votes": 5000, "pct_reporting": 95}, lp)
+    assert called["call"]["source_called"] is True and called["call"]["projected"] is False
+    assert called["call"]["source_winner"] == "D"

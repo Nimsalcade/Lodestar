@@ -34,12 +34,51 @@ class LiveParams:
     # Day, a big county still out), and "% of expected vote" is itself an estimate.
     remaining_sd_floor: float = 10.0          # SD of the remaining vote's margin (points)
     expected_vote_cv: float = 0.35            # relative uncertainty in how much vote remains
+    # The model's own call: a side must be this certain once this share of the expected
+    # vote is counted. Deliberately independent of civicAPI's race calls.
+    call_threshold: float = 0.985
+    call_min_report: float = 0.25
     sims: int = 12000
     seed: int = 7
 
 
 def _phi(x: float) -> float:
     return 0.5 * (1 + math.erf(x / math.sqrt(2)))
+
+
+def _vote_stats(d: float, r: float, o: float, p: float) -> dict:
+    """Counted / expected / remaining votes and each side's share of those counted."""
+    counted = d + r + o
+    stats: dict = {"counted_votes": int(counted), "expected_votes": None, "remaining_votes": None,
+                   "shares": None}
+    if counted > 0:
+        stats["shares"] = {"d": round(100 * d / counted, 1), "r": round(100 * r / counted, 1),
+                           "o": round(100 * o / counted, 1)}
+        if p > 0:
+            expected = counted / p
+            stats["expected_votes"] = int(round(expected))
+            stats["remaining_votes"] = int(max(round(expected - counted), 0))
+    return stats
+
+
+def _call(race: dict, p_d: float, p: float, status: str, winner, lp: LiveParams) -> dict:
+    """The model's own projection, and separately whether civicAPI has called it.
+
+    A call needs both a decisive nowcast (>= call_threshold) and enough of the expected
+    vote counted (>= call_min_report), so a big early lead in a small count is not a call.
+    """
+    source_called = status == "called" and winner in ("D", "R", "IND", "OTHER")
+    call = {"projected": False, "winner": None, "confidence": None, "basis": None,
+            "source_called": source_called, "source_winner": winner if source_called else None,
+            "threshold": lp.call_threshold, "min_report": lp.call_min_report}
+    if source_called:
+        return call
+    if p >= lp.call_min_report and (p_d >= lp.call_threshold or p_d <= 1 - lp.call_threshold):
+        side_d = p_d >= 0.5
+        label = ("D" if race.get("d_side") == "D" else "IND") if side_d else "R"
+        call.update(projected=True, winner=label,
+                    confidence=round(p_d if side_d else 1 - p_d, 6), basis="model")
+    return call
 
 
 def nowcast_race(race: dict, res: dict, lp: LiveParams, shift: float = 0.0) -> dict:
@@ -49,17 +88,21 @@ def nowcast_race(race: dict, res: dict, lp: LiveParams, shift: float = 0.0) -> d
     status = res.get("status", "counting")
     winner = res.get("winner")
     d, r = float(res.get("d_votes") or 0), float(res.get("r_votes") or 0)
+    o = float(res.get("other_votes") or 0)
     p = min(max(float(res.get("pct_reporting") or 0) / 100.0, 0.0), 1.0)
     out = {"id": race["id"], "status": status, "pct_reporting": round(100 * p, 1), "winner": winner,
-           "d_votes": int(d), "r_votes": int(r), "other_votes": int(res.get("other_votes") or 0)}
+           "d_votes": int(d), "r_votes": int(r), "other_votes": int(o)}
+    out.update(_vote_stats(d, r, o, p))
     if status == "called" and winner in ("D", "R", "IND", "OTHER"):
         side_d = winner == "D" or (winner == "IND" and race.get("d_side") == "IND")
         m_obs = 100 * (d - r) / (d + r) if d + r > 0 else (mu0 if side_d else -mu0)
-        out.update(p_d=1.0 if side_d else 0.0, est_margin=round(m_obs, 2), est_sd=0.0, counted_margin=round(m_obs, 2))
+        out.update(p_d=1.0 if side_d else 0.0, est_margin=round(m_obs, 2), est_sd=0.0,
+                   counted_margin=round(m_obs, 2), call=_call(race, 1.0 if side_d else 0.0, p, status, winner, lp))
         return out
     if d + r <= 0 or p <= 0:
-        out.update(p_d=_phi(mu0 / math.hypot(sd0, S.sd_national)), est_margin=round(mu0, 2),
-                   est_sd=round(math.hypot(sd0, S.sd_national), 2), counted_margin=None)
+        p_d = _phi(mu0 / math.hypot(sd0, S.sd_national))
+        out.update(p_d=p_d, est_margin=round(mu0, 2), est_sd=round(math.hypot(sd0, S.sd_national), 2),
+                   counted_margin=None, call=_call(race, p_d, p, status, winner, lp))
         return out
     m_obs = 100 * (d - r) / (d + r)
     w = math.sqrt(p)                                  # how representative the count is
@@ -72,7 +115,9 @@ def nowcast_race(race: dict, res: dict, lp: LiveParams, shift: float = 0.0) -> d
     s_r = lp.expected_vote_cv * rem + 0.015            # +1.5 pts of total turnout uncertainty
     sd = math.sqrt((rem ** 2 + s_r ** 2) * sd_rem ** 2 + (s_r * (mu_rem - m_obs)) ** 2)
     sd = max(sd, 0.2)
-    out.update(p_d=_phi(est / sd), est_margin=round(est, 2), est_sd=round(sd, 2), counted_margin=round(m_obs, 2))
+    p_d = _phi(est / sd)
+    out.update(p_d=p_d, est_margin=round(est, 2), est_sd=round(sd, 2), counted_margin=round(m_obs, 2),
+               call=_call(race, p_d, p, status, winner, lp))
     return out
 
 

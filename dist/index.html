@@ -139,6 +139,32 @@ main{padding:20px 0 40px}
 .av.fb{display:inline-grid;place-items:center;color:#fff;font-weight:650;line-height:1;
   letter-spacing:.02em;border:0;font-family:inherit}
 .who{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;max-width:100%}
+/* ---------- live race card ---------- */
+.lcard{display:flex;flex-direction:column;gap:12px}
+.lbanner{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;font-weight:700;
+  font-size:12.5px;letter-spacing:.06em;text-transform:uppercase}
+.lbanner.win{background:#f5c542;color:#111}
+.lbanner.call{background:var(--surface-2);color:var(--ink);border:1px solid var(--border)}
+.lbanner.count{background:var(--surface-2);color:var(--ink-2)}
+.lbanner .lwin{display:inline-flex;align-items:center;gap:7px;margin-left:auto;font-size:13.5px;font-weight:650;
+  letter-spacing:0;text-transform:none;min-width:0}
+.lrows{display:flex;flex-direction:column;gap:9px}
+.lrow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;
+  border:1px solid var(--border);border-radius:10px}
+.lrow.win{border-color:#e0b400;box-shadow:inset 0 0 0 1px rgba(245,197,66,.45)}
+.lrow .lnm{font-weight:650;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .lparty{font-size:12px;color:var(--muted)}
+.lrow .lvotes{text-align:right;font-variant-numeric:tabular-nums}
+.lrow .lvotes b{font-size:16px}
+.lbar{grid-column:1/-1;height:8px;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.lbar i{display:block;height:100%;border-radius:5px}
+.lkpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.lkpi{background:var(--surface-2);border-radius:10px;padding:9px 11px}
+.lkpi b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+.lkpi span{font-size:11.5px;color:var(--muted)}
+.lprog{height:8px;background:var(--surface-2);border-radius:5px;overflow:hidden;margin-bottom:6px}
+.lprog i{display:block;height:100%;background:var(--ink-2);border-radius:5px}
+.lfoot{margin-top:2px}
 .race .pr{font-size:13px;font-variant-numeric:tabular-nums}
 .race .pr b{font-size:15px}
 .race .pl{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
@@ -315,8 +341,8 @@ footer{border-top:1px solid var(--border);padding:18px 0 30px;color:var(--ink-2)
       <div class="card" id="liveControls"></div>
       <div class="grid g3" style="margin-top:14px" id="liveTiles"></div>
       <div class="grid g2" style="margin-top:14px">
-        <div class="card"><h3>What tonight's results say about the polls</h3><p class="sub">Shared error learned from races that are nearly fully counted, applied to races still out.</p><div id="liveError"></div></div>
-        <div class="card"><h3>Scorecard vs. the locked forecast</h3><p class="sub">Every called race, graded against the pre-election probabilities.</p><div id="liveScore"></div></div>
+        <div class="card"><h3>What tonight's results say about the polls</h3><p class="sub">Shared polling error learned from counted races.</p><div id="liveError"></div></div>
+        <div class="card"><h3>Scorecard vs. the locked forecast</h3><p class="sub">Called races graded against the locked forecast.</p><div id="liveScore"></div></div>
       </div>
       <div class="card" style="margin-top:14px">
         <div class="toolbar"><div class="seg" id="liveFilter"><button aria-pressed="true" data-v="senate">Senate</button><button aria-pressed="false" data-v="governor">Governors</button><button aria-pressed="false" data-v="house">House (competitive)</button></div></div>
@@ -604,7 +630,7 @@ function renderGov(){const g=S.f.chambers.governor;
   segBind("#govFilter",draw);draw();}
 
 /* ===================================================================== race drawer */
-function openRace(id){const r=S.byId[id];if(!r)return;hideTip();const b=$("#dBody");b.replaceChildren();
+function openRace(id){const r=S.byId[id];if(!r)return;if(LIVE.timer){clearInterval(LIVE.timer);LIVE.timer=null;}LIVE.raceId=null;hideTip();const b=$("#dBody");b.replaceChildren();
   const fav=favored(r);
   b.append(h("div",{class:"eyebrow"},r.chamber==="house"?`${r.state_name} · House`:r.chamber==="governor"?"Governor":"Senate"),
     h("h2",{id:"dTitle",style:"margin:4px 0 2px;font-size:22px"},raceTitle(r)),
@@ -616,33 +642,20 @@ function openRace(id){const r=S.byId[id];if(!r)return;hideTip();const b=$("#dBod
   if(live&&(live.pct_reporting>0||live.status==="called")){b.append(h("div",{class:"card",style:"margin-top:12px;background:var(--surface-2);border:0"},h("b",null,"Live: "),`${live.pct_reporting}% of expected vote · counted ${mfmt(live.counted_margin)} · projected final ${mfmt(live.est_margin)} · live chance ${pct(live.p_d)} for ${lastName(r.d_cand)}`,live.status==="called"?h("span",{class:"badge"},"CALLED"):null));}
   b.append(h("div",{class:"kv"},h("div",null,h("b",null,mfmt(r.margin.mean)),h("span",null,"projected margin")),h("div",null,h("b",null,`${mfmt(r.margin.p10,0)} to ${mfmt(r.margin.p90,0)}`),h("span",null,"80% range")),
     h("div",null,h("b",null,pct(r.poll_weight)),h("span",null,"weight on polls")),h("div",null,h("b",null,r.ratings?r.ratings.consensus:"—"),h("span",null,"handicappers"))));
-  // build-up chart
-  b.append(h("h3",{style:"margin:18px 0 4px;font-size:15px"},"How the forecast was built"),h("p",{class:"sub"},"Each source's estimate of the margin, then the blend. Dots are central estimates; bars span ±1 standard deviation (final: 80% range)."));
-  const rows=[["Fundamentals",r.fundamentals.mu,r.fundamentals.sd,`lean ${mfmt(r.fundamentals.lean)}, national environment ${mfmt(r.fundamentals.environment)}, incumbency ${mfmt(r.fundamentals.incumbency)}, money ${mfmt(r.fundamentals.finance)}`]];
-  if(r.ratings)rows.push(["Handicappers",r.ratings.mu,null,Object.entries(r.ratings.by_rater).map(([k,v])=>`${k}: ${v}`).join(" · ")]);
-  rows.push(["Prior (blend of the above)",r.prior.mu,r.prior.sd,""]);
-  if(r.polls)rows.push(["Polling average",r.polls.avg,r.polls.sd,`${r.polls.n_polls} polls (${r.polls.core_n} top-20), top-20-only ${mfmt(r.polls.core_avg)}, undecided ${r.polls.undecided}%`]);
-  rows.push(["Final forecast",r.margin.mean,null,`80% range ${mfmt(r.margin.p10,0)} to ${mfmt(r.margin.p90,0)}`,[r.margin.p10,r.margin.p90]]);
-  const W=Math.min(600,innerWidth-60),lo=Math.floor(Math.min(...rows.map(x=>x[1]-(x[2]||0)),r.margin.p10,-5)/5)*5,hi=Math.ceil(Math.max(...rows.map(x=>x[1]+(x[2]||0)),r.margin.p90,5)/5)*5;
-  const xs=v=>150+(W-160)*(v-lo)/(hi-lo),H=rows.length*36+24;const svg=s("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Forecast components"});
-  for(let v=lo;v<=hi;v+=5){svg.appendChild(s("line",{x1:xs(v),x2:xs(v),y1:4,y2:H-18,class:v===0?"baseline":"gridline"}));svg.appendChild(s("text",{x:xs(v),y:H-4,"text-anchor":"middle",class:"tick"},v===0?"0":mfmt(v,0)));}
-  rows.forEach((x,i)=>{const y=18+i*36,col=x[1]>=0?partyColor(r.d_side):partyColor(r.r_side),fin=i===rows.length-1;
-    svg.appendChild(s("text",{x:0,y:y+4,class:fin?"annot-strong":"annot"},x[0]));
-    const span=x[4]||(x[2]?[x[1]-x[2],x[1]+x[2]]:null);if(span)svg.appendChild(s("line",{x1:xs(span[0]),x2:xs(span[1]),y1:y,y2:y,stroke:col,"stroke-width":fin?3:2,"stroke-linecap":"round",opacity:.45}));
-    const c=s("circle",{cx:xs(x[1]),cy:y,r:fin?6:4.5,fill:col,stroke:"var(--surface-1)","stroke-width":2});svg.appendChild(c);
-    const hit=s("rect",{x:0,y:y-14,width:W,height:28,fill:"transparent"});hit.addEventListener("pointermove",e=>showTip(e,()=>[h("b",null,mfmt(x[1])),h("div",{class:"r"},x[0]),x[3]?h("div",{class:"r"},x[3]):null]));hit.addEventListener("pointerleave",hideTip);svg.appendChild(hit);});
-  b.append(h("div",{class:"chart"},svg));
-  b.append(h("ul",{class:"sub",style:"padding-left:18px;margin-top:6px"},...rows.filter(x=>x[3]).map(x=>h("li",null,h("b",null,x[0]+": "),x[3]))));
+  b.append(h("p",{class:"sub",style:"margin-top:14px"},"Construction and assumptions: ",
+    h("a",{href:"#method",onclick:()=>setTimeout(closeDrawer,0)},"Method page"),"."));
   // polls table
   const pl=r.poll_list||[];
-  b.append(h("h3",{style:"margin:18px 0 4px;font-size:15px"},`Polls (${pl.length})`),h("p",{class:"sub"},"Weight = share of this race's average. Adjusted = after house-effect, sponsor and national-trend adjustments. Top-20 firms are ranked."));
+  b.append(h("h3",{style:"margin:18px 0 4px;font-size:15px"},`Polls (${pl.length})`),h("p",{class:"sub"},"Weight is the poll's share of this race's average; adjusted for house effect, sponsor and trend."));
   if(pl.length){const t=h("table",null,h("thead",null,h("tr",null,h("th",null,"Pollster"),h("th",null,"Dates"),h("th",{class:"num"},"Sample"),h("th",{class:"num"},`${lastName(r.d_cand)}–${lastName(r.r_cand)}`),h("th",{class:"num"},"Adj."),h("th",{class:"num"},"Weight"))),
     h("tbody",null,...pl.slice(0,40).map(p=>h("tr",{class:p.core_rank?"core":""},h("td",null,p.core_rank?h("span",{class:"rank"},"#"+p.core_rank):null,p.url?h("a",{href:p.url,target:"_blank",rel:"noopener"},p.pollster):p.pollster,p.partisan?h("span",{class:"badge"},p.partisan):null),
       h("td",{style:"white-space:nowrap"},p.end.slice(5)),h("td",{class:"num"},p.n?`${p.n} ${p.pop||""}`:(p.pop||"")),h("td",{class:"num"},`${p.d}–${p.r}`),h("td",{class:"num"},mfmt(p.adj_margin)),h("td",{class:"num"},pct(p.weight_share,1))))));
     b.append(h("div",{class:"tbl-wrap"},t));} else b.append(h("p",{class:"sub"},"No public polls; this forecast rests on fundamentals and handicapper ratings."));
   $("#drawer").classList.add("on");$("#drawer").setAttribute("aria-hidden","false");$("#drawer .close").focus();}
-$("#drawer").addEventListener("click",e=>{if(e.target.dataset.close){$("#drawer").classList.remove("on");$("#drawer").setAttribute("aria-hidden","true");}});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#drawer").classList.remove("on");hideTip();}});
+function closeDrawer(){if(LIVE.timer){clearInterval(LIVE.timer);LIVE.timer=null;}LIVE.raceId=null;
+  $("#drawer").classList.remove("on");$("#drawer").setAttribute("aria-hidden","true");hideTip();}
+$("#drawer").addEventListener("click",e=>{if(e.target.dataset.close)closeDrawer();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDrawer();});
 
 /* ===================================================================== pollsters */
 function renderPollsters(){
@@ -676,7 +689,7 @@ function renderLiveControls(){const el=$("#liveControls");el.replaceChildren();
     const parseBtn=h("button",{class:"btn",onclick:async()=>{out.textContent="Parsing…";const r=await (await fetch("/api/agent/parse-results",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:ta.value})})).json();
       const ok=r.rows.filter(x=>x.race_id);out.replaceChildren(h("div",null,`${ok.length} row(s) matched: `+ok.map(x=>`${x.race_id} ${x.d_votes}/${x.r_votes} @${x.pct_reporting}%`).join("; ")),
         ok.length?h("button",{class:"btn primary",style:"margin-top:6px",onclick:async()=>{await fetch("/api/results",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(ok)});out.textContent="Applied.";pollLive();}},"Apply to live model"):null);}},"Parse with AI");
-    el.append(h("h3",null,"Results source"),h("p",{class:"sub"},"civicAPI streams secretary-of-state counts and race calls (free; attribution: civicapi.org). Demo replays a simulated night from the forecast itself."),seg,
+    el.append(h("h3",null,"Results source"),h("p",{class:"sub"},"civicAPI provides counts and race calls; demo replays a simulated night. Attribution: civicapi.org."),seg,
       h("div",{style:"margin-top:12px"},ta,h("div",{style:"display:flex;gap:8px;margin-top:6px"},parseBtn),out));
   } else {
     const n=(S.frames||[]).length;const lab=h("span",{class:"pill demo"},h("i"),h("span",null,"DEMO — simulated results"));
@@ -712,16 +725,80 @@ function renderLive(){
   const tb=$("#liveTable");tb.replaceChildren(h("thead",null,h("tr",null,h("th",null,"Race"),h("th",null,"Status"),h("th",null,"Reporting"),h("th",{class:"num"},"Counted"),h("th",{class:"num"},"Proj. final"),h("th",{class:"num"},"Live D chance"),h("th",{class:"num"},"Pre-election"))),
     h("tbody",null,...rs.map(r=>{const nc=L&&L.races&&L.races[r.id];const st=nc?nc.status:"awaiting";let cls=st,lab=st==="counting"?"Counting":st==="called"?"Called":"Awaiting";
       if(st==="called"){const w=nc.p_d>=.5?(r.d_side==="IND"?"i":"d"):"r";cls="called-"+w;lab=`Called ${w.toUpperCase()}`;}
-      const liveP=nc?nc.p_d:null;return h("tr",{style:"cursor:pointer",onclick:()=>openRace(r.id)},h("td",{style:"white-space:nowrap"},h("b",null,r.chamber==="house"?r.label:r.state_name+(r.special?" (sp.)":"")),h("div",{class:"muted",style:"font-size:12px;display:flex;align-items:center;gap:5px"},avatar(r,"d",18),lastName(r.d_cand),h("span",null,"vs"),avatar(r,"r",18),lastName(r.r_cand))),
+      const liveP=nc?nc.p_d:null;return h("tr",{style:"cursor:pointer",onclick:()=>openLiveRace(r.id)},h("td",{style:"white-space:nowrap"},h("b",null,r.chamber==="house"?r.label:r.state_name+(r.special?" (sp.)":"")),h("div",{class:"muted",style:"font-size:12px;display:flex;align-items:center;gap:5px"},avatar(r,"d",18),lastName(r.d_cand),h("span",null,"vs"),avatar(r,"r",18),lastName(r.r_cand))),
         h("td",null,h("span",{class:"status "+cls},lab)),h("td",null,h("div",{class:"prog",role:"img","aria-label":`${nc?nc.pct_reporting:0}% reporting`},h("i",{style:`width:${nc?nc.pct_reporting:0}%`})),h("span",{class:"muted",style:"font-size:11.5px"},nc?nc.pct_reporting+"%":"0%")),
         h("td",{class:"num"},nc&&nc.counted_margin!=null?mfmt(nc.counted_margin):"—"),h("td",{class:"num"},nc&&nc.est_margin!=null?mfmt(nc.est_margin):mfmt(r.margin.mean)),
         h("td",{class:"num"},liveP==null?"—":pctSmart(liveP)),h("td",{class:"num muted"},pctSmart(r.p_d)));})));
   const fresh=L?(L.stale?` · ⚠ feed is ${L.age_seconds==null?"":Math.round(L.age_seconds)+"s "}old`:(L.age_seconds!=null?` · ${Math.round(L.age_seconds)}s ago`:"")):"";
   $("#liveLine").textContent=L?`Updated ${L.updated||"just now"} · source: ${L.source||"demo"}${L.attribution?" · "+L.attribution:""}${fresh}`:"Results update the forecast as votes are counted.";
 }
-const LIVE={lastPoll:0};
-async function pollLive(){if(S.mode!=="server")return;
-  const now=Date.now();if(now-LIVE.lastPoll<3000)return;LIVE.lastPoll=now;
+
+/* ---- live race card: counted votes, remaining vote, each candidate, model's call ---- */
+const nfmt=n=>Number(n||0).toLocaleString("en-US");
+function winSideFor(r,w){if(w==="R")return"r";if(w==="IND")return r.d_side==="IND"?"d":"o";return"d";}
+function sideAvatar(r,side,px){const sz=px||28;if(side==="o")
+  return h("span",{class:"av fb",style:`width:${sz}px;height:${sz}px;font-size:${Math.round(sz*0.32)}px;background:var(--muted)`},"OTH");
+  return avatar(r,side,sz);}
+function liveRaceCard(r,nc){
+  const call=nc&&nc.call, counted=nc?(nc.counted_votes||0):0, expected=nc?nc.expected_votes:null,
+    remaining=nc?nc.remaining_votes:null, pct=nc?(nc.pct_reporting||0):0;
+  const b=h("div",{class:"lcard"},
+    h("div",{class:"eyebrow"},`LIVE · ${r.chamber==="house"?r.state_name:r.chamber==="governor"?"Governor":"Senate"}`),
+    h("h2",{id:"dTitle",style:"margin:2px 0 0;font-size:24px"},raceTitle(r)),
+    h("p",{class:"sub",style:"margin:2px 0 6px"},nc?`${nfmt(counted)} votes counted${expected?` of ~${nfmt(expected)} expected`:""}${remaining!=null?` · ~${nfmt(remaining)} remaining`:""}`:"No live results for this race yet."));
+  if(call&&call.projected){
+    const ws=winSideFor(r,call.winner);
+    b.append(h("div",{class:"lbanner win"},h("span",null,"PROJECTED WINNER ✓"),
+      h("span",{class:"lwin"},sideAvatar(r,ws,26),` ${ws==="r"?r.r_cand:r.d_cand}`)));
+  } else if(nc&&nc.status==="called"){
+    const ws=winSideFor(r,(call&&call.source_winner)||nc.winner);
+    b.append(h("div",{class:"lbanner call"},h("span",null,"CALLED BY CIVICAPI"),
+      h("span",{class:"lwin"},sideAvatar(r,ws,26),` ${ws==="r"?r.r_cand:r.d_cand}`)));
+  } else {
+    b.append(h("div",{class:"lbanner count"},h("span",null,pct>0?"COUNTING":"AWAITING RESULTS"),
+      h("span",{class:"lwin"},pct>0?`${pct.toFixed(1)}% reported`:"awaiting first votes")));
+  }
+  const rows=[];
+  rows.push({side:"d",name:r.d_cand,party:r.d_side,votes:nc?(nc.d_votes||0):0,share:nc&&nc.shares?nc.shares.d:0});
+  rows.push({side:"r",name:r.r_cand,party:r.r_side,votes:nc?(nc.r_votes||0):0,share:nc&&nc.shares?nc.shares.r:0});
+  if(nc&&(nc.other_votes||0)>0)rows.push({side:"o",name:"Other candidates",party:"O",votes:nc.other_votes,share:nc.shares?nc.shares.o:0});
+  rows.sort((a,b2)=>b2.votes-a.votes);
+  const winSide=(call&&call.projected)?winSideFor(r,call.winner):((nc&&nc.status==="called")?winSideFor(r,(call&&call.source_winner)||nc.winner):null);
+  const wrap=h("div",{class:"lrows"});
+  for(const x of rows){
+    const partyTxt=x.party==="D"?"Democrat":x.party==="R"?"Republican":x.party==="IND"?"Independent":"Other";
+    const col=x.side==="o"?"var(--muted)":partyColor(x.party);
+    wrap.append(h("div",{class:"lrow"+(x.side===winSide?" win":"")},
+      sideAvatar(r,x.side,40),
+      h("div",{style:"min-width:0"},h("div",{class:"lnm"},x.name),h("div",{class:"lparty"},partyTxt)),
+      h("div",{class:"lvotes"},h("b",null,nfmt(x.votes)),h("div",{class:"lparty"},`${(x.share||0).toFixed(1)}%`)),
+      h("div",{class:"lbar"},h("i",{style:`width:${Math.min(100,x.share||0)}%;background:${col}`}))));
+  }
+  b.append(wrap);
+  b.append(h("div",{class:"lkpis"},
+    h("div",{class:"lkpi"},h("b",null,nfmt(counted)),h("span",null,"votes counted")),
+    h("div",{class:"lkpi"},h("b",null,expected?nfmt(expected):"—"),h("span",null,"expected total")),
+    h("div",{class:"lkpi"},h("b",null,remaining!=null?nfmt(remaining):"—"),h("span",null,"est. remaining"))));
+  b.append(h("div",{class:"lfoot"},
+    h("div",{class:"lprog"},h("i",{style:`width:${Math.min(100,pct)}%`})),
+    h("div",{style:"display:flex;justify-content:space-between;gap:10px"},
+      h("span",{class:"sub"},`${pct.toFixed(1)}% of expected votes in`),
+      h("span",{class:"sub"},"refreshes every minute"))));
+  b.append(h("button",{class:"btn",style:"margin-top:10px",onclick:()=>openRace(r.id)},"Full forecast for this race"));
+  return b;
+}
+function renderLiveRace(){const r=S.byId[LIVE.raceId];if(!r)return;
+  const nc=(S.live&&S.live.races&&S.live.races[r.id])||null;
+  $("#dBody").replaceChildren(liveRaceCard(r,nc));}
+function openLiveRace(id){const r=S.byId[id];if(!r)return;LIVE.raceId=id;hideTip();
+  $("#drawer").classList.add("on");$("#drawer").setAttribute("aria-hidden","false");
+  renderLiveRace();$("#drawer .close").focus();
+  (async()=>{await pollLive(true);renderLiveRace();})();
+  if(LIVE.timer)clearInterval(LIVE.timer);
+  LIVE.timer=setInterval(async()=>{await pollLive(true);renderLiveRace();},60000);}
+const LIVE={lastPoll:0,raceId:null,timer:null};
+async function pollLive(force){if(S.mode!=="server")return;
+  const now=Date.now();if(!force&&now-LIVE.lastPoll<3000)return;LIVE.lastPoll=now;
   try{const r=await (await fetch("/api/live")).json();S.live=r.chambers?r:null;renderLive();setPill();}catch(e){}}
 segBind("#liveFilter",()=>renderLive());
 
@@ -778,6 +855,7 @@ function renderMethod(){const m=S.f.meta;
     h("p",null,h("b",null,"Top 20 as the base, not the whole. "),"Restricting to 20 firms alone would leave many races with one or two polls, so the panel anchors each average and every other poll counts at reduced weight. The Top-20-only forecast is stored separately and graded after the election."),
     h("p",null,h("b",null,"No directional fudge. "),"Polls overstated Democrats in 2014, 2016, 2020, 2022 and 2024, were accurate in 2018, and understated Democrats by about 7 points in the 2025 off-year races. Midterm electorates are the high-propensity voters polls reach best, so Lodestar does not shift toward either party; it widens the national error instead (3.6 pts, fat-tailed). This is the call that matters most: a uniform 3-point pro-Democratic polling error would cut the Senate odds to about 45%."),
     h("p",null,h("b",null,"The AI never forecasts. "),"DeepSeek explains, parses pasted results and runs what-ifs through deterministic tools. Every percentage it states must match a tool result or it is sent back to rewrite."),
+    h("p",null,h("b",null,"Calls on the night. "),"A race is projected once the live nowcast gives a side at least 98.5% confidence and at least 25% of the expected vote is counted; civicAPI's own calls are shown separately as calls by the source. The nowcast blends the counted margin with the expected margin of the uncounted vote and applies the night's shared polling error, learned from races that are nearly complete."),
     h("p",null,h("b",null,"Known limits. "),"Parameters were set from the 2014–2024 polling-error record rather than a full end-to-end backtest of this code; ranked-choice and multi-candidate races are reduced to the two leading sides; House district polls are sparse, so most districts rest on lean, incumbency and handicappers."));
   $("#methodTest").replaceChildren(h("h3",null,"Testing it after Tuesday"),
     h("p",null,"The pre-election forecast is frozen with a SHA-256 hash so nothing can move after the fact. Post the hash publicly before polls close."),
