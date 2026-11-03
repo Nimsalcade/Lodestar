@@ -275,7 +275,8 @@ def lock_status():
 def live():
     HUB.ensure_fresh()
     if not HUB.live:
-        return {"status": "no results yet", "source": HUB.source}
+        return {"status": "no results yet", "source": HUB.source, "last_error": HUB.last_error,
+                "attribution": feeds.ATTRIBUTION if HUB.source == "civicapi" else None}
     out = dict(HUB.live)
     age = HUB.live_age()
     out["age_seconds"] = age

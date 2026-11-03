@@ -38,8 +38,10 @@ ATTRIBUTION = "Results and race calls: civicAPI (civicapi.org)"
 TYPES = {"US Senate": "senate", "House of Representatives": "house", "Governor": "governor"}
 QUERIES = ({"election_type": "General"}, {"query": "Governor", "election_type": "Statewide"})
 
-TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "20"))
-RETRIES = int(os.getenv("CIVICAPI_RETRIES", "3"))
+# On a serverless host the platform may cap a request at ~10 s, so time out below
+# that and let the next poll retry: a timed-out query still warms civicAPI's cache.
+TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "8" if os.getenv("VERCEL") else "20"))
+RETRIES = int(os.getenv("CIVICAPI_RETRIES", "1" if os.getenv("VERCEL") else "3"))
 
 
 def _get(url: str, timeout: float | None = None, retries: int | None = None) -> dict:
