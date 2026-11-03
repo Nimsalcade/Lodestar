@@ -1,20 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "lodestar": {
-      "root": ".",
-      "framework": "fastapi",
-      "entrypoint": "main:app"
+  "functions": {
+    "main.py": {
+      "maxDuration": 60
     }
-  },
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": { "service": "lodestar" }
-    },
-    {
-      "source": "/(.*)",
-      "destination": { "service": "lodestar" }
-    }
-  ]
+  }
 }

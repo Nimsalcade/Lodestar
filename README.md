@@ -87,16 +87,24 @@ The image is a plain FastAPI app on port 8000, so it deploys anywhere that runs 
 
 ## Deploy to Vercel
 
-The repo ships a `vercel.json` that declares the app as a Vercel **Service**
-(`framework: fastapi`, entrypoint `main:app`). Service rewrites preserve the request
-path, so the dashboard reaches FastAPI's own `/`, `/api/*` routes unchanged. Import the
-repository, then set the environment variables in the project:
+Vercel's **FastAPI preset** is zero-config: it looks for a `FastAPI` instance named
+`app` in `app.py`, `index.py`, `server.py`, `main.py`, `wsgi.py` or `asgi.py` (or the
+same names in `src/` or `app/`). This repo's `main.py` re-exports `server.app:app`, so
+importing the repository is enough — Vercel detects FastAPI, routes every path to the
+app, and deploys it as one Function. `vercel.json` only raises `maxDuration` to 60 s so a
+cold civicAPI query has room.
+
+Set the environment variables in the project:
 
 | variable | value |
 |---|---|
 | `LIVE_SOURCE` | `civicapi` for live results (default `none` serves the locked forecast) |
 | `DEEPSEEK_API_KEY` | optional; the analyst runs from templates without it |
 | `LLM_PROVIDER` | `auto` (default) |
+
+Keep the **FastAPI** application preset. If Vercel shows a warning about a
+`services` block, the deployment is using an older config — this repo no longer
+declares one.
 
 What changes on a serverless host:
 
@@ -209,7 +217,7 @@ agent/         DeepSeek analyst: llm.py (auto / Ollama / DeepSeek API / OpenAI-c
                tools.py (deterministic tools) · agent.py (tool loop + grounding check)
 server/app.py  FastAPI: dashboard, /api/forecast, /api/live, /api/results, /api/agent/*,
                /api/lock, /api/health; persists night results, never overlaps a refresh
-main.py        Vercel entrypoint (`main:app`); vercel.json declares the FastAPI Service
+main.py        Vercel entrypoint (re-exports the FastAPI app); vercel.json sets maxDuration
 dashboard/     index.html: the whole UI, one file, no external dependencies
 scripts/       build_static.py (single-file dist/ with the forecast embedded) ·
                check_agent.py (smoke-test the configured DeepSeek model)
