@@ -690,7 +690,10 @@ function renderLive(){
   const fresh=L?(L.stale?` · ⚠ feed is ${L.age_seconds==null?"":Math.round(L.age_seconds)+"s "}old`:(L.age_seconds!=null?` · ${Math.round(L.age_seconds)}s ago`:"")):"";
   $("#liveLine").textContent=L?`Updated ${L.updated||"just now"} · source: ${L.source||"demo"}${L.attribution?" · "+L.attribution:""}${fresh}`:"Results update the forecast as votes are counted.";
 }
-async function pollLive(){if(S.mode!=="server")return;try{const r=await (await fetch("/api/live")).json();S.live=r.chambers?r:null;renderLive();setPill();}catch(e){}}
+const LIVE={lastPoll:0};
+async function pollLive(){if(S.mode!=="server")return;
+  const now=Date.now();if(now-LIVE.lastPoll<3000)return;LIVE.lastPoll=now;
+  try{const r=await (await fetch("/api/live")).json();S.live=r.chambers?r:null;renderLive();setPill();}catch(e){}}
 segBind("#liveFilter",()=>renderLive());
 
 /* ===================================================================== analyst */
@@ -766,7 +769,7 @@ function route(){const v=(location.hash||"#overview").slice(1);const view=VIEWS.
   requestAnimationFrame(()=>renderView(view));}
 const rendered={};
 function renderView(v){if(v==="overview")renderOverview();else if(v==="senate")renderSenate();else if(v==="house")renderHouse();else if(v==="governors")renderGov();
-  else if(v==="live"){if(!rendered.live){renderLiveControls();rendered.live=1;}renderLive();}else if(v==="pollsters")renderPollsters();else if(v==="analyst"){if(!rendered.an){renderAnalyst();rendered.an=1;}}else if(v==="method")renderMethod();}
+  else if(v==="live"){if(!rendered.live){renderLiveControls();rendered.live=1;}renderLive();pollLive();}else if(v==="pollsters")renderPollsters();else if(v==="analyst"){if(!rendered.an){renderAnalyst();rendered.an=1;}}else if(v==="method")renderMethod();}
 function setPill(){const p=$("#modePill");const live=S.live&&S.live.chambers;const src=S.mode==="server"?(S.health&&S.health.live_source):"static";
   const stale=!!(live&&S.live.stale);
   p.className="pill"+(live?(src==="demo"||S.mode==="static"?" demo":" live"):"");

@@ -139,6 +139,11 @@ In the dashboard's **Live results** tab, pick a source:
   `[{"race_id": "senate:ME", "d_votes": 412000, "r_votes": 398000, "pct_reporting": 81, "status": "counting"}]`
   (`status`: `counting` | `called` | `awaiting`; `winner`: `D` | `R` | `IND` when called).
 
+The dashboard fetches `/api/live` on page load, every 15 seconds, and whenever you open
+the **Live results** tab; the server pulls civicAPI whenever its own snapshot is older
+than `LIVE_AUTOREFRESH_SECONDS` (15 s), so a visitor sees results at most a few seconds
+behind the feed.
+
 On each refresh, the live engine:
 1. Nowcasts each race by blending the counted margin with the expected margin of the uncounted vote.
 2. Learns the night's shared polling error from races that are nearly fully counted.
