@@ -236,56 +236,242 @@ pre.code{background:var(--surface-2);padding:10px 12px;border-radius:8px;overflo
 footer{border-top:1px solid var(--border);padding:18px 0 30px;color:var(--ink-2);font-size:12.5px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .fade{opacity:.55;transition:opacity .2s}
+
+/* ================= editorial redesign ================= */
+.viz-root{
+  --page:#f7f4ee; --surface-1:#fffdfa; --surface-2:#f2eee5;
+  --ink:#16140f; --ink-2:#524d44; --muted:#8d877b;
+  --grid:#e5dfd3; --axis:#cec7b8; --border:#e3ddd1; --wash:rgba(22,20,15,.035);
+  --dem:#2f5d8a; --rep:#a64038; --ind:#2e7d5f;
+  --sd:#1e4a73; --ld:#2f5d8a; --nd:#a8c1d6; --tu:#dcd5c7; --nr:#dcb0aa; --lr:#bf6a61; --sr:#7d2b25;
+  --sd-ink:#fff; --ld-ink:#fff; --nd-ink:#16140f; --tu-ink:#16140f; --nr-ink:#16140f; --lr-ink:#fff; --sr-ink:#fff;
+  --accent:#16140f; --good:#2e7d5f; --warn:#a9761c; --crit:#b23a32;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15.5px; background:linear-gradient(180deg,#fbf9f4 0,#f7f4ee 260px);
+}
+:root[data-theme="dark"] .viz-root{
+  --page:#121110; --surface-1:#1a1916; --surface-2:#23211d; --ink:#f1ede5; --ink-2:#c6c0b4; --muted:#928b7e;
+  --grid:#2b2822; --axis:#3a362e; --border:#2b2822; --wash:rgba(241,237,229,.045);
+  --dem:#5b8fbe; --rep:#cf736a; --ind:#4fa383;
+  --sd:#8ab4d8; --ld:#5b8fbe; --nd:#2f5470; --tu:#454138; --nr:#6e3a34; --lr:#cf736a; --sr:#e3a19a;
+  --sd-ink:#121110; --ld-ink:#fff; --nd-ink:#f1ede5; --tu-ink:#f1ede5; --nr-ink:#f1ede5; --lr-ink:#121110; --sr-ink:#121110;
+  --accent:#f1ede5; background:linear-gradient(180deg,#17150f 0,#121110 260px);
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])) .viz-root{
+    --page:#121110; --surface-1:#1a1916; --surface-2:#23211d; --ink:#f1ede5; --ink-2:#c6c0b4; --muted:#928b7e;
+    --grid:#2b2822; --axis:#3a362e; --border:#2b2822; --wash:rgba(241,237,229,.045);
+    --dem:#5b8fbe; --rep:#cf736a; --ind:#4fa383;
+    --sd:#8ab4d8; --ld:#5b8fbe; --nd:#2f5470; --tu:#454138; --nr:#6e3a34; --lr:#cf736a; --sr:#e3a19a;
+    --sd-ink:#121110; --ld-ink:#fff; --nd-ink:#f1ede5; --tu-ink:#f1ede5; --nr-ink:#f1ede5; --lr-ink:#121110; --sr-ink:#121110;
+    --accent:#f1ede5; background:linear-gradient(180deg,#17150f 0,#121110 260px);
+  }
+}
+body{background:#f7f4ee}
+:root[data-theme="dark"] body{background:#121110}
+@media (prefers-color-scheme: dark){:root:where(:not([data-theme="light"])) body{background:#121110}}
+h1,h2,h3,.display,.cc-head h3,.seatstats b,.kv b{font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,ui-serif,Georgia,"Times New Roman",serif;font-weight:600;letter-spacing:-.015em}
+.wrap{max-width:1300px;padding:0 28px}
+main{padding:0 0 64px}
+.top{background:rgba(247,244,238,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+:root[data-theme="dark"] .top{background:rgba(18,17,16,.92)}
+@media (prefers-color-scheme: dark){:root:where(:not([data-theme="light"])) .top{background:rgba(18,17,16,.92)}}
+.top .wrap{min-height:0;display:flex;align-items:center;gap:18px;flex-wrap:nowrap;max-width:1300px}
+.topbar{height:64px}
+.brand{display:flex;align-items:baseline;gap:8px;text-decoration:none;margin-right:0;flex:none}
+.brand svg{align-self:center;width:22px;height:22px}
+.brand .bn{font-family:"Iowan Old Style","Palatino Linotype",Palatino,ui-serif,Georgia,serif;font-size:21px;font-weight:600;letter-spacing:-.02em}
+.brand .by{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tabs{margin:0 auto;border:0;gap:2px;overflow:visible}
+.tabs a{font-size:13.5px;font-weight:500;color:var(--ink-2);padding:22px 11px;border-bottom:2px solid transparent;letter-spacing:.005em}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.top-actions{display:flex;align-items:center;gap:8px;flex:none}
+.top .pill{border-radius:999px;padding:4px 10px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;background:transparent}
+.top .pill i{width:6px;height:6px}
+.top .iconbtn{border-radius:50%;height:34px;min-width:34px;border-color:var(--border);background:transparent}
+.subbar{height:34px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.top-count{font-variant-numeric:tabular-nums;color:var(--ink-2);font-weight:600;letter-spacing:.04em}
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:6px;padding:20px}
+.card h2,.card h3{font-size:17px}
+.sub{font-size:13px;color:var(--ink-2)}
+.section-h{margin:34px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--ink);gap:14px}
+.section-h h2{font-family:"Iowan Old Style","Palatino Linotype",Palatino,ui-serif,Georgia,serif;font-size:23px;font-weight:600;letter-spacing:-.015em}
+.section-h p{font-size:12.5px;color:var(--muted)}
+.pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:4px 10px;border-radius:999px}
+.btn{border-radius:4px;padding:8px 14px;font-size:12.5px;letter-spacing:.02em}
+.btn.primary{background:var(--ink);color:var(--page)}
+.iconbtn{border-radius:4px}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+/* hero */
+.hero-head{padding:54px 0 26px;border-bottom:1px solid var(--border)}
+.hero-title-row{display:flex;align-items:flex-start;gap:18px;justify-content:space-between;flex-wrap:wrap}
+.display{font-size:clamp(42px,5.4vw,68px);line-height:.98;margin:10px 0 14px;letter-spacing:-.035em}
+.deck{font-size:16.5px;line-height:1.55;color:var(--ink-2);max-width:76ch;margin:0}
+.deck b{color:var(--ink);font-weight:600}
+.status-pill{border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-2);white-space:nowrap;background:transparent}
+.status-pill.live{border-color:var(--crit);color:var(--crit)}
+/* chamber cards */
+.chamber-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:26px 0 8px}
+@media (max-width:980px){.chamber-grid{grid-template-columns:1fr}}
+.chamber-card{background:var(--surface-1);border:1px solid var(--border);border-radius:6px;padding:20px 20px 0;display:flex;flex-direction:column;min-width:0}
+.cc-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cc-head h3{font-size:26px;margin:0;line-height:1}
+.cc-cap{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:center;font-weight:700;margin:8px 0 0}
+.gauge{display:block;width:100%;max-width:272px;margin:2px auto 0}
+.gauge-top{fill:var(--muted);font-size:8.5px;letter-spacing:.12em;font-weight:700;font-family:ui-sans-serif,system-ui,sans-serif}
+.gauge-end{fill:var(--muted);font-size:7.5px;letter-spacing:.1em;font-weight:700;font-family:ui-sans-serif,system-ui,sans-serif}
+.cc-first{text-align:center;margin:-4px 0 0}
+.cc-first .t{font-family:"Iowan Old Style","Palatino Linotype",Palatino,ui-serif,Georgia,serif;font-size:34px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05}
+.cc-first .l{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:2px}
+.cc-first .n{font-size:12px;color:var(--ink-2);margin-top:3px}
+.seatstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:4px;text-align:center;margin:18px 0 10px}
+.seatstats b{display:block;font-size:31px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.seatstats span{font-size:10.5px;color:var(--ink-2);letter-spacing:.02em}
+.seatbar{position:relative;display:flex;height:12px;border-radius:2px;overflow:hidden;background:var(--surface-2)}
+.seatbar i{display:block;height:100%}
+.seatbar .tick{position:absolute;top:-4px;bottom:-4px;width:1.5px;background:var(--ink);left:50%}
+.seatlabels{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;color:var(--muted);margin-top:7px}
+.cc-foot{margin:16px -20px 0;border-top:1px solid var(--border);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--ink-2);text-decoration:none}
+.cc-foot b{font-weight:600;color:var(--ink)}
+.cc-foot:hover{background:var(--wash)}
+/* panels */
+.split-2{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:18px;margin:26px 0 8px}
+@media (max-width:940px){.split-2{grid-template-columns:1fr}}
+.panel{background:var(--surface-1);border:1px solid var(--border);border-radius:6px;padding:18px 20px;margin-bottom:18px;min-width:0}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;border-bottom:1px solid var(--ink);padding-bottom:8px;margin-bottom:2px}
+.kicker{font-family:ui-sans-serif,system-ui,sans-serif;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin:0}
+.kicker-note{font-size:11.5px;color:var(--muted);text-align:right}
+/* watch rows */
+.watch-row{display:grid;grid-template-columns:64px minmax(0,1fr) 78px;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit}
+.watch-row:last-child{border-bottom:0}
+.watch-row:hover .wr-bar{filter:brightness(.97)}
+.wr-state b{display:block;font-size:14.5px;font-weight:700;letter-spacing:.02em}
+.wr-state span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wr-bar{display:flex;height:48px;border-radius:4px;overflow:hidden;font-size:12.5px;color:#fff;min-width:0}
+.wr-bar .d{background:var(--dem);display:flex;align-items:center;gap:7px;padding:0 11px;min-width:0}
+.wr-bar .r{background:var(--rep);display:flex;align-items:center;justify-content:flex-end;gap:7px;padding:0 11px;min-width:0;text-align:right}
+.wr-bar img{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,.55);flex:none}
+.wr-bar .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.wr-bar .pc{font-weight:700;font-variant-numeric:tabular-nums;flex:none}
+.wr-close{font-size:11px;color:var(--muted);text-align:right;line-height:1.3}
+.wr-close b{display:block;color:var(--ink-2);font-size:12px;font-weight:600}
+/* calls */
+.call-row{display:flex;align-items:flex-start;gap:9px;padding:10px 0;border-bottom:1px solid var(--border)}
+.call-row:last-child{border-bottom:0}
+.call-dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex:none;background:var(--muted)}
+.call-dot.d{background:var(--dem)} .call-dot.r{background:var(--rep)} .call-dot.i{background:var(--ind)}
+.call-row b{display:block;font-size:13px;font-weight:600;line-height:1.3}
+.call-row span{font-size:11.5px;color:var(--muted)}
+.calls-empty{font-size:14px;line-height:1.6;color:var(--ink-2);margin:12px 0 0}
+/* closings */
+.closings{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:0;overflow-x:auto;margin-top:4px}
+.closing-col{border-left:1px solid var(--border);padding:10px 10px 12px;min-width:108px}
+.closing-col:first-child{border-left:0;padding-left:0}
+.closing-col.next{background:linear-gradient(180deg,rgba(178,58,50,.09),transparent 65%);box-shadow:inset 0 2px 0 var(--crit)}
+.closing-time{font-size:12.5px;font-weight:700;letter-spacing:-.01em}
+.closing-col.next .closing-time{color:var(--crit)}
+.closing-next{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--crit);font-weight:700;margin-top:2px;min-height:11px}
+.closing-states{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 6px}
+.state-chip{border:1px solid var(--border);border-radius:2px;padding:1px 4px;font-size:10.5px;font-weight:600;background:var(--surface-1)}
+.closing-count{font-size:10.5px;color:var(--muted);line-height:1.45}
+/* state grid */
+.state-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:7px;margin-top:12px}
+.state-cell{display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:3px;padding:7px 9px;font-size:11.5px;background:var(--surface-1);min-width:0}
+.state-cell b{font-size:12px;letter-spacing:.02em}
+.state-cell .sn{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.state-cell .mark{margin-left:auto;color:var(--muted);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;white-space:nowrap}
+/* restyle other views */
+.race{padding:14px 8px;border-top:1px solid var(--border)}
+.race .nm{font-family:"Iowan Old Style","Palatino Linotype",Palatino,ui-serif,Georgia,serif;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.race-head{letter-spacing:.12em;font-size:10px;color:var(--muted)}
+table{border-collapse:collapse;width:100%}
+th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--ink);padding:7px 8px;text-align:left}
+td{padding:8px;border-bottom:1px solid var(--border);font-size:13px}
+#drawer .panel{background:var(--page);padding:22px 24px 44px;box-shadow:-20px 0 60px rgba(0,0,0,.18)}
+#drawer .close{border-radius:50%;background:var(--surface-1)}
+.chat{height:min(68vh,620px)}
+.msg{border-radius:8px;font-size:14px;border:1px solid var(--border)}
+.msg.bot{background:var(--surface-1)}
+.msg.user{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.chip{border-radius:3px;font-size:12px;background:var(--surface-1)}
+.composer textarea{border-radius:4px;background:var(--surface-1)}
+.pipe div{border:1px solid var(--border);background:var(--surface-1);border-radius:4px}
+.kv div{background:var(--surface-2);border-radius:4px}
+footer{font-size:11.5px;color:var(--muted);padding:22px 0 40px}
+@media (max-width:900px){
+  .wrap{padding:0 16px}
+  .top .wrap.topbar{display:grid;grid-template-columns:1fr auto;grid-auto-rows:auto;
+    align-items:center;height:auto;min-height:58px;padding:8px 0;gap:2px 10px}
+  .top .wrap.topbar .brand{grid-row:1;grid-column:1}
+  .top .wrap.topbar .top-actions{grid-row:1;grid-column:2;justify-self:end}
+  .top .wrap.topbar .tabs{grid-row:2;grid-column:1/3;width:100%;overflow:visible;flex-wrap:wrap;
+    justify-content:flex-start;margin:0;border-top:1px solid var(--border)}
+  .tabs a{padding:9px 9px;font-size:12.5px}
+  .top-actions .pill{display:none}
+  .subbar{display:none!important}
+  .hero-head{padding:30px 0 18px}
+  .display{font-size:38px}
+  .closings{grid-template-columns:repeat(9,120px)}
+  .wr-bar .nm{display:none}
+}
+
 </style>
 </head>
 <body>
 <div class="viz-root" id="app">
   <header class="top">
-    <div class="wrap">
-      <div class="brand">
-        <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 1.5l2.6 8.9 8.9 2.6-8.9 2.6L13 24.5l-2.6-8.9L1.5 13l8.9-2.6z" fill="currentColor"/></svg>
-        <div><b>Lodestar 2026</b><br><span id="asof">Midterm forecast</span></div>
+    <div class="wrap topbar">
+      <a class="brand" href="#overview" aria-label="Lodestar 2026">
+        <svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 1.5l2.6 8.9 8.9 2.6-8.9 2.6L13 24.5l-2.6-8.9L1.5 13l8.9-2.6z" fill="currentColor"/></svg>
+        <span class="bn">Lodestar</span><span class="by">2026</span>
+      </a>
+      <nav class="tabs" id="tabs" aria-label="Sections">
+        <a href="#overview">Overview</a><a href="#senate">Senate</a><a href="#house">House</a>
+        <a href="#governors">Governors</a><a href="#live">Live</a><a href="#pollsters">Pollsters</a>
+        <a href="#analyst">Analyst</a><a href="#method">Method</a>
+      </nav>
+      <div class="top-actions">
+        <span class="pill" id="modePill"><i></i><span>Forecast locked</span></span>
+        <button class="iconbtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
       </div>
-      <span class="pill" id="modePill"><i></i><span>Forecast</span></span>
-      <button class="iconbtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
     </div>
-    <div class="wrap"><nav class="tabs" id="tabs" aria-label="Sections">
-      <a href="#overview">Overview</a><a href="#senate">Senate</a><a href="#house">House</a><a href="#governors">Governors</a>
-      <a href="#live">Live results</a><a href="#pollsters">Top-20 pollsters</a><a href="#analyst">AI analyst</a><a href="#method">Method</a>
-    </nav></div>
+    <div class="wrap subbar">
+      <span id="asof">Forecast as of 2026-11-02 · election Nov 3</span>
+      <span id="topCountdown" class="top-count"></span>
+    </div>
   </header>
 
   <main class="wrap">
     <!-- OVERVIEW -->
     <section class="view" id="view-overview" aria-labelledby="h-overview">
-      <h1 class="sr" id="h-overview">Overview</h1>
-      <div class="hero">
-        <div class="card hero-main">
-          <div class="eyebrow">Chance Democrats win both chambers</div>
-          <div class="hero-fig" id="heroFig">—</div>
-          <p class="hero-line" id="heroLine"></p>
-          <div class="combo" id="comboBar" role="img"></div>
-          <div class="legend" id="comboLegend"></div>
+      <div class="hero-head">
+        <div class="eyebrow" id="heroEyebrow">Lodestar 2026 · Forecast</div>
+        <div class="hero-title-row">
+          <h1 class="display" id="h-overview">The 2026 midterms</h1>
+          <span class="status-pill" id="phasePill">Forecast locked</span>
         </div>
-        <div class="grid" style="grid-template-columns:1fr 1fr">
-          <div class="card tile" id="tSenate"></div>
-          <div class="card tile" id="tHouse"></div>
-          <div class="card tile" id="tGov"></div>
-          <div class="card tile" id="tGB"></div>
-        </div>
+        <p class="deck" id="heroDeck"></p>
       </div>
-
-      <div class="section-h"><h2>The road to 51</h2><p>Senate races ordered from safest Democratic to safest Republican; Democrats start with 34 seats not on the ballot.</p></div>
-      <div class="card"><div class="chart" id="ladder"></div><div class="legend" id="ladderLegend" style="margin-top:8px"></div></div>
-
-      <div class="grid g2" style="margin-top:14px">
-        <div class="card"><h3>Senate seats won by Democrats</h3><p class="sub">Share of 40,000 simulations. 51 seats (with Sanders and King) for control.</p><div class="chart" id="histSenate"></div><div class="legend" id="histSenateLeg"></div></div>
-        <div class="card"><h3>House seats won by Democrats</h3><p class="sub">Share of 40,000 simulations. 218 seats for control.</p><div class="chart" id="histHouse"></div><div class="legend" id="histHouseLeg"></div></div>
+      <div class="chamber-grid" id="chamberCards"></div>
+      <div class="split-2">
+        <section class="panel">
+          <div class="panel-head"><h2 class="kicker">Races to watch</h2><span class="kicker-note">Senate and governors · by poll closing</span></div>
+          <div id="watchList"></div>
+        </section>
+        <aside class="panel">
+          <div class="panel-head"><h2 class="kicker">Latest calls</h2></div>
+          <div id="latestCalls"></div>
+        </aside>
       </div>
-      <div class="grid g2" style="margin-top:14px">
-        <div class="card"><h3>What if the polls are wrong?</h3><p class="sub">Chance of Democratic control if every race misses by the same amount. Right = Democrats beat their polls.</p><div class="chart" id="sens"></div><div class="legend" id="sensLeg"></div></div>
-        <div class="card"><h3>Tipping-point races</h3><p class="sub">How often each race delivers the decisive 51st Democratic seat.</p><div id="tipping"></div></div>
-      </div>
+      <section class="panel">
+        <div class="panel-head"><h2 class="kicker">Poll closings</h2><span class="kicker-note">Eastern time · a state that spans two zones counts from its first close</span></div>
+        <div class="closings" id="closings"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2 class="kicker">Results by state</h2><span class="kicker-note">S: Senate · G: Governor · every state elects its House seats</span></div>
+        <div class="state-grid" id="stateGrid"></div>
+      </section>
     </section>
 
     <!-- SENATE -->
@@ -545,22 +731,139 @@ function tileMap(el,scaleEl,chamber){
 
 /* ===================================================================== overview */
 function renderOverview(){
-  const c=S.f.chambers,sen=c.senate,hou=c.house,gov=c.governor,con=c.congress,gb=S.f.national.generic_ballot;
-  $("#heroFig").textContent=pctSmart(con.d_both);
-  const lead=sen.p_d_control>.5&&hou.p_d_control>.5?"Democrats are favored to win the House and the Senate":"The chambers may split";
-  $("#heroLine").textContent=`${lead}. The House is the likelier pickup; the Senate turns on a handful of red-state races where Democrats lead narrowly in the polls.`;
-  const parts=[["Both D",con.d_both,"var(--dem)"],["D House, R Senate",con.d_house_r_senate,"var(--nd)"],["R House, D Senate",con.r_house_d_senate,"var(--nr)"],["Both R",con.r_both,"var(--rep)"]];
-  const other=Math.max(0,1-parts.reduce((a,p)=>a+p[1],0));parts.push(["Other (independents decide)",other,"var(--tu)"]);
-  $("#comboBar").replaceChildren(...parts.filter(p=>p[1]>.004).map(p=>{const d=h("div",{style:`flex:${p[1]};background:${p[2]};color:${p[2].includes("nd")||p[2].includes("nr")||p[2].includes("tu")?"var(--nd-ink)":"#fff"}`},p[1]>.12?pct(p[1]):"");
-    d.addEventListener("pointermove",e=>showTip(e,()=>[h("b",null,pct(p[1],1)),h("div",{class:"r"},p[0])]));d.addEventListener("pointerleave",hideTip);return d;}));
-  $("#comboBar").setAttribute("aria-label",parts.map(p=>`${p[0]} ${pct(p[1])}`).join(", "));
-  $("#comboLegend").replaceChildren(...parts.filter(p=>p[1]>.004).map(p=>h("span",null,h("i",{class:"sw",style:`background:${p[2]}`}),`${p[0]} ${pct(p[1])}`)));
-  const tile=(el,label,p,note,sub)=>{el.replaceChildren(...[h("div",{class:"label"},label),h("div",{class:"value"},pctSmart(p)),h("div",{class:"pbar"},h("i",{style:`width:${100*p}%;background:var(--dem)`}),h("i",{style:`width:${100*(1-p)}%;background:var(--rep)`})),h("div",{class:"note"},note),sub?h("div",{class:"note muted"},sub):null].filter(Boolean));};
-  tile($("#tSenate"),"Senate · Democratic control",sen.p_d_control,`Median ${sen.d_seats.median} D seats (80%: ${sen.d_seats.p10}–${sen.d_seats.p90})`,sen.p_independents_decide>.005?`Independents hold balance: ${pct(sen.p_independents_decide,1)}`:null);
-  tile($("#tHouse"),"House · Democratic control",hou.p_d_control,`Median ${hou.d_seats.median} D seats (80%: ${hou.d_seats.p10}–${hou.d_seats.p90})`);
-  tile($("#tGov"),"Governors · Democratic majority",gov.p_d_majority,`Median ${gov.d_seats.median} D governors (80%: ${gov.d_seats.p10}–${gov.d_seats.p90})`);
-  $("#tGB").replaceChildren(h("div",{class:"label"},"Generic ballot (Lodestar avg)"),h("div",{class:"value"},mfmt(gb.margin)),h("div",{class:"note"},`D ${gb.d}% – R ${gb.r}%`),h("div",{class:"note muted"},`${gb.n_polls} polls in the last 45 days`));
-  renderLadder();renderHists();renderSens();renderTipping();
+  const c=S.f.chambers,con=c.congress,sen=c.senate,hou=c.house,gov=c.governor,rules=S.f.control_rules;
+  const live=!!(S.live&&S.live.chambers);
+  $("#heroEyebrow").textContent=live?"Lodestar 2026 · Live results":"Lodestar 2026 · Forecast";
+  const ph=$("#phasePill");ph.textContent=live?"Live count":"Forecast locked";ph.className="status-pill"+(live?" live":"");
+  $("#heroDeck").replaceChildren("A probabilistic forecast of all ",h("b",null,"506 Senate, House and governor races"),
+    " — 1,504 polls, handicapper ratings and fundamentals, simulated 40,000 times. ",
+    h("b",null,`Democrats have a ${pct(con.d_both)} chance`)," to win both chambers; the House is the likelier pickup.");
+  const hbar=h("div",{class:"seatbar"},h("i",{style:"flex:435;background:var(--tu)"}),h("span",{class:"tick",style:"left:50%"}));
+  $("#chamberCards").replaceChildren(
+    chamberCard({title:"Senate",p:sen.p_d_control,badge:"Forecast",
+      stats:[[rules.senate.not_up.D,"Democrats"],[35,"races"],[rules.senate.not_up.R,"Republicans"]],
+      bar:seatBar([[rules.senate.not_up.D,"var(--dem)",.55],[35,"var(--tu)",1],[rules.senate.not_up.R,"var(--rep)",.55]]),
+      labels:[`${rules.senate.not_up.D} not up`,`${rules.senate.majority} for control`,`${rules.senate.not_up.R} not up`],
+      close:CLOSE_SENATE,closeNote:"6 PM ET · IN, KY",foot:"35 races on the ballot",footLink:"Senate results →",href:"#senate",
+      note:`Median ${sen.d_seats.median} D seats · 80% range ${sen.d_seats.p10}–${sen.d_seats.p90}`}),
+    chamberCard({title:"House",p:hou.p_d_control,badge:"Forecast",
+      stats:[[435,"seats on the ballot"],[rules.house.majority,"for control"]],
+      bar:hbar,labels:["435 seats","218 for control"],
+      close:CLOSE_SENATE,closeNote:"6 PM ET · IN, KY",foot:"435 seats on the ballot",footLink:"House results →",href:"#house",
+      note:`Median ${hou.d_seats.median} D seats · 80% range ${hou.d_seats.p10}–${hou.d_seats.p90}`}),
+    chamberCard({title:"Governors",p:gov.p_d_majority,badge:"Forecast",
+      stats:[[rules.governor.not_up.D,"Democrats"],[36,"races"],[rules.governor.not_up.R,"Republicans"]],
+      bar:seatBar([[rules.governor.not_up.D,"var(--dem)",.55],[36,"var(--tu)",1],[rules.governor.not_up.R,"var(--rep)",.55]]),
+      labels:[`${rules.governor.not_up.D} not up`,`${rules.governor.majority} for a majority`,`${rules.governor.not_up.R} not up`],
+      close:CLOSE_GOV,closeNote:"7 PM ET · FL, GA, SC, VT",foot:"36 races on the ballot",footLink:"Governor results →",href:"#governors",
+      note:`Median ${gov.d_seats.median} D governors · 80% range ${gov.d_seats.p10}–${gov.d_seats.p90}`}));
+  renderWatch();renderCalls();renderClosings();renderStates();tickCountdown();
+}
+const CLOSE_SENATE="2026-11-03T18:00:00-05:00",CLOSE_GOV="2026-11-03T19:00:00-05:00";
+const POLL_CLOSINGS=[
+  ["6:00 PM","2026-11-03T18:00:00-05:00",["IN","KY"]],
+  ["7:00 PM","2026-11-03T19:00:00-05:00",["FL","GA","SC","VA","VT"]],
+  ["7:30 PM","2026-11-03T19:30:00-05:00",["NC","OH","WV"]],
+  ["8:00 PM","2026-11-03T20:00:00-05:00",["AL","CT","DE","IL","MA","MD","ME","MI","MO","MS","NH","NJ","OK","PA","RI","TN","TX"]],
+  ["8:30 PM","2026-11-03T20:30:00-05:00",["AR"]],
+  ["9:00 PM","2026-11-03T21:00:00-05:00",["AZ","CO","IA","KS","LA","MN","NE","NM","NY","SD","WI","WY"]],
+  ["10:00 PM","2026-11-03T22:00:00-05:00",["ID","MT","NV","UT"]],
+  ["11:00 PM","2026-11-03T23:00:00-05:00",["CA","OR","WA"]],
+  ["12:00 AM","2026-11-04T00:00:00-05:00",["AK","HI"]]];
+const CLOSING_BY_STATE={};POLL_CLOSINGS.forEach(g=>g[2].forEach(st=>CLOSING_BY_STATE[st]={label:g[0],iso:g[1]}));
+function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000)),hr=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;
+  return `${hr}:${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;}
+function tickCountdown(){
+  const now=Date.now();
+  document.querySelectorAll("[data-countdown]").forEach(el=>{const t=Date.parse(el.dataset.countdown)-now;el.textContent=t>0?fmtDur(t):"Polls closed";});
+  const top=$("#topCountdown");
+  if(top){const t=Date.parse(CLOSE_SENATE)-now;top.textContent=t>0?`First polls close in ${fmtDur(t)} · 6:00 PM ET`:"Polls closed · counting has begun";}
+}
+setInterval(tickCountdown,1000);
+function seatBar(parts){return h("div",{class:"seatbar"},...parts.map(([w,color,op])=>h("i",{style:`flex:${w};background:${color};opacity:${op==null?1:op}`})));}
+function gauge(p,aria){
+  const W=284,H=152,cx=142,cy=130,r=100,th=16;
+  const ang=v=>Math.PI*(1-Math.min(1,Math.max(0,v)));
+  const pt=(v,rr)=>[cx+rr*Math.cos(ang(v)),cy-rr*Math.sin(ang(v))];
+  const arc=(a,b)=>{const[x1,y1]=pt(a,r),[x2,y2]=pt(b,r);return`M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 0 1 ${x2.toFixed(2)},${y2.toFixed(2)}`;};
+  const bands=[[0,.05,"var(--sr)"],[.05,.2,"var(--lr)"],[.2,.4,"var(--nr)"],[.4,.6,"var(--tu)"],[.6,.8,"var(--nd)"],[.8,.95,"var(--ld)"],[.95,1,"var(--sd)"]];
+  const svg=s("svg",{viewBox:`0 0 ${W} ${H}`,class:"gauge",role:"img","aria-label":aria||`Needle at ${pct(p)}`});
+  bands.forEach(([a,b,col])=>svg.appendChild(s("path",{d:arc(a,b),fill:"none",stroke:col,"stroke-width":th})));
+  svg.appendChild(s("text",{x:cx,y:cy-64,"text-anchor":"middle",class:"gauge-top"},"TOSS-UP"));
+  svg.appendChild(s("text",{x:cx-r+4,y:cy+16,class:"gauge-end"},"SAFE R"));
+  svg.appendChild(s("text",{x:cx+r-4,y:cy+16,"text-anchor":"end",class:"gauge-end"},"SAFE D"));
+  const[nx,ny]=pt(p,r-18);
+  svg.appendChild(s("line",{x1:cx,y1:cy,x2:nx,y2:ny,stroke:"var(--ink)","stroke-width":2.5,"stroke-linecap":"round"}));
+  svg.appendChild(s("circle",{cx,cy,r:5,fill:"var(--ink)"}));
+  return svg;
+}
+function chamberCard(o){
+  return h("article",{class:"chamber-card"},
+    h("div",{class:"cc-head"},h("h3",null,o.title),h("span",{class:"status-pill"},o.badge)),
+    h("div",{class:"cc-cap"},"Results as the states count"),
+    gauge(o.p,`${o.title}: ${pct(o.p)} chance Democrats win control`),
+    h("div",{class:"cc-first"},h("div",{class:"t","data-countdown":o.close},"—"),h("div",{class:"l"},"first polls close in"),h("div",{class:"n"},o.closeNote)),
+    h("div",{class:"seatstats"},...o.stats.map(([n,l])=>h("div",null,h("b",null,String(n)),h("span",null,l)))),
+    o.bar,h("div",{class:"seatlabels"},...o.labels.map(x=>h("span",null,x))),
+    h("div",{class:"sub",style:"text-align:center;margin:10px 0 0"},o.note),
+    h("a",{class:"cc-foot",href:o.href},h("span",null,o.foot),h("b",null,o.footLink)));
+}
+function renderWatch(){
+  const races=S.f.races.filter(r=>r.chamber==="senate"||r.chamber==="governor")
+    .sort((a,b)=>Math.abs(a.p_d-.5)-Math.abs(b.p_d-.5)).slice(0,7);
+  const el=$("#watchList");el.replaceChildren();
+  races.forEach(r=>{
+    const nc=S.live&&S.live.races&&S.live.races[r.id];
+    const p=nc&&nc.p_d!=null?nc.p_d:r.p_d,dp=Math.min(97,Math.max(3,p*100));
+    const close=CLOSING_BY_STATE[r.state]||{label:"—"};
+    const open=()=>{if(nc)openLiveRace(r.id);else openRace(r.id);};
+    el.append(h("a",{class:"watch-row",href:"#live",onclick:e=>{e.preventDefault();open();}},
+      h("div",{class:"wr-state"},h("b",null,r.state),h("span",null,r.chamber==="governor"?"Gov":"Senate")),
+      h("div",{class:"wr-bar"},
+        h("div",{class:"d",style:`flex:${dp}`},avatar(r,"d",26),h("span",{class:"nm"},lastName(r.d_cand)),h("span",{class:"pc"},pctSmart(p))),
+        h("div",{class:"r",style:`flex:${100-dp}`},h("span",{class:"pc"},pctSmart(1-p)),h("span",{class:"nm"},lastName(r.r_cand)),avatar(r,"r",26))),
+      h("div",{class:"wr-close"},h("b",null,close.label),"poll close")));
+  });
+}
+function renderCalls(){
+  const el=$("#latestCalls");el.replaceChildren();
+  const calls=[];
+  if(S.live&&S.live.races)for(const[id,nc]of Object.entries(S.live.races)){
+    const call=nc.call||{};if(!call.projected&&nc.status!=="called")continue;
+    const r=S.byId[id];if(r)calls.push({r,nc,call});
+  }
+  calls.sort((a,b)=>(b.nc.pct_reporting||0)-(a.nc.pct_reporting||0));
+  if(!calls.length){
+    el.append(h("p",{class:"calls-empty"},"No race has been projected yet. The first polls close at 6 PM ET in Indiana and Kentucky; calls come once a race is clear."));
+    return;
+  }
+  calls.slice(0,6).forEach(({r,nc,call})=>{
+    const w=call.projected?call.winner:call.source_winner;
+    const side=w==="R"?"r":(w==="IND"&&r.d_side!=="IND"?"i":"d");
+    const name=side==="r"?r.r_cand:r.d_cand;
+    el.append(h("div",{class:"call-row"},h("span",{class:"call-dot "+side}),
+      h("div",null,h("b",null,`${r.state_name} ${r.chamber==="house"?r.label:r.chamber==="governor"?"governor":"Senate"}`),
+        h("span",null,`${lastName(name)} ${call.projected?"projected":"called"} · ${Math.round(nc.pct_reporting||0)}% counted`))));
+  });
+}
+function renderClosings(){
+  const el=$("#closings");el.replaceChildren();const now=Date.now();
+  let nextIx=-1;POLL_CLOSINGS.forEach((g,i)=>{if(nextIx<0&&Date.parse(g[1])>now)nextIx=i;});
+  POLL_CLOSINGS.forEach(([label,iso,states],i)=>{
+    const sc=S.f.races.filter(r=>r.chamber==="senate"&&states.includes(r.state)).length;
+    const gc=S.f.races.filter(r=>r.chamber==="governor"&&states.includes(r.state)).length;
+    el.append(h("div",{class:"closing-col"+(i===nextIx?" next":"")},
+      h("div",{class:"closing-time"},label),h("div",{class:"closing-next"},i===nextIx?"Next":""),
+      h("div",{class:"closing-states"},...states.map(st=>h("span",{class:"state-chip"},st))),
+      h("div",{class:"closing-count"},[sc?`${sc} Senate`:"",gc?`${gc} Gov.`:""].filter(Boolean).join(" · ")||"House only")));
+  });
+}
+function renderStates(){
+  const el=$("#stateGrid");el.replaceChildren();const st={};
+  S.f.races.forEach(r=>{const x=st[r.state]=st[r.state]||{name:r.state_name,s:false,g:false};if(r.chamber==="senate")x.s=true;if(r.chamber==="governor")x.g=true;});
+  Object.entries(st).sort((a,b)=>a[1].name.localeCompare(b[1].name)).forEach(([ab,x])=>
+    el.append(h("div",{class:"state-cell"},h("b",null,ab),h("span",{class:"sn"},x.name),
+      h("span",{class:"mark"},[x.s?"S":"",x.g?"G":""].filter(Boolean).join(" ")))));
 }
 function renderLadder(){
   const el=$("#ladder");el.replaceChildren();const sen=S.f.races.filter(r=>r.chamber==="senate").sort((a,b)=>b.p_d-a.p_d);
@@ -798,7 +1101,7 @@ function openLiveRace(id){const r=S.byId[id];if(!r)return;LIVE.raceId=id;hideTip
 const LIVE={lastPoll:0,raceId:null,timer:null};
 async function pollLive(force){if(S.mode!=="server")return;
   const now=Date.now();if(!force&&now-LIVE.lastPoll<3000)return;LIVE.lastPoll=now;
-  try{const r=await (await fetch("/api/live")).json();S.live=r.chambers?r:null;renderLive();setPill();}catch(e){}}
+  try{const r=await (await fetch("/api/live")).json();S.live=r.chambers?r:null;renderLive();setPill();if(S.view==="overview")renderOverview();}catch(e){}}
 segBind("#liveFilter",()=>renderLive());
 
 /* ===================================================================== analyst */
