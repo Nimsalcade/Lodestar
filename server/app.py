@@ -86,6 +86,7 @@ class Hub:
         self.last_error: str | None = None
         self.fetch_meta: dict = {}
         self._refresh_guard = threading.Lock()
+        self._refresh_started: float | None = None
         self.params = LiveParams()
         self.llm = LLM()
         self.state = State(self.forecast)
@@ -146,6 +147,7 @@ class Hub:
         """Fetch the configured feed. Never overlaps an in-flight refresh."""
         if not self._refresh_guard.acquire(blocking=False):
             return
+        self._refresh_started = time.time()
         try:
             meta = {}
             if self.source == "civicapi":
@@ -167,6 +169,7 @@ class Hub:
         except Exception as e:
             self.last_error = f"{type(e).__name__}: {e}"
         finally:
+            self._refresh_started = None
             self._refresh_guard.release()
 
     # ---------------------------------------------------------------- health
@@ -202,6 +205,12 @@ class Hub:
         age = self.live_age()
         if age is not None and age < AUTOREFRESH_SECONDS:
             return
+        # If a previous serverless invocation was killed mid-fetch, its lock can
+        # outlive it. Abandon a guard that has been held far longer than any
+        # bounded fetch so the next request can recover.
+        if self._refresh_started and time.time() - self._refresh_started > 240:
+            self._refresh_guard = threading.Lock()
+            self._refresh_started = None
         self.refresh()
 
     def status(self) -> dict:

@@ -43,9 +43,9 @@ QUERIES = ({"election_type": "General"}, {"query": "Governor", "election_type": 
 # run up to 300 s on Hobby) and let the next poll retry a transient failure.
 # Election-night queries have taken 20-60 s each. A 30 s cap was timing out before
 # the first page arrived; allow the request to finish and cap the whole search.
-TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "120" if os.getenv("VERCEL") else "40"))
+TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "90" if os.getenv("VERCEL") else "40"))
 RETRIES = int(os.getenv("CIVICAPI_RETRIES", "1"))
-BUDGET = float(os.getenv("CIVICAPI_BUDGET", "240" if os.getenv("VERCEL") else "120"))
+BUDGET = float(os.getenv("CIVICAPI_BUDGET", "200" if os.getenv("VERCEL") else "120"))
 
 
 def _get(url: str, timeout: float | None = None, retries: int | None = None) -> dict:
@@ -81,13 +81,13 @@ def _surname(name: str) -> str:
     return toks[-1] if toks else ""
 
 
-def _fetch_query(q: dict, limit: int = 1000) -> list[dict]:
+def _fetch_query(q: dict, limit: int = 1000, timeout: float | None = None) -> list[dict]:
     races: list[dict] = []
     offset = 0
     while True:
         params = {"startDate": ELECTION, "endDate": ELECTION, "country": "US", "limit": limit,
                   "offset": offset, **q}
-        page = _get(f"{SEARCH}?{urllib.parse.urlencode(params)}")
+        page = _get(f"{SEARCH}?{urllib.parse.urlencode(params)}", timeout=timeout)
         batch = page.get("races") or []
         races += batch
         offset += len(batch)
@@ -110,12 +110,17 @@ def fetch_civicapi_partial(limit: int = 1000) -> tuple[list[dict], dict]:
     t0 = time.time()
     for q in QUERIES:
         name = q.get("query") or q.get("election_type") or "query"
-        for attempt in range(2):
+        # The statewide query is the flakiest and only covers 36 governors; cap it
+        # so a hung request cannot hold the whole refresh (and the refresh lock).
+        gov = q.get("query") == "Governor"
+        attempts = 1 if gov else 2
+        q_timeout = min(TIMEOUT, 45) if gov else TIMEOUT
+        for attempt in range(attempts):
             if time.time() - t0 > BUDGET:
                 errors.append(f"{name}: time budget exhausted")
                 break
             try:
-                batch = _fetch_query(q, limit)
+                batch = _fetch_query(q, limit, timeout=q_timeout)
             except Exception as e:  # noqa: BLE001 - one bad query must not blank the night
                 errors.append(f"{name}: {type(e).__name__}: {e}")
                 if attempt == 0:

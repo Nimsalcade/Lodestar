@@ -352,7 +352,7 @@ def test_civicapi_partial_fetch_keeps_one_query_when_the_other_fails(monkeypatch
     assert [r["id"] for r in races] == ["federal-1", "federal-2"]
     assert meta["partial"] is True
     assert any("503" in e for e in meta["errors"])
-    assert calls == ["General", "Statewide", "Statewide"]  # one retry before giving up
+    assert calls == ["General", "Statewide"]  # the optional statewide query is not retried
 
 
 def test_civicapi_fetch_raises_only_when_every_query_fails(monkeypatch):
