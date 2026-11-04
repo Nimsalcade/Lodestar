@@ -418,6 +418,50 @@ footer{font-size:11.5px;color:var(--muted);padding:22px 0 40px}
   .wr-bar .nm{display:none}
 }
 
+
+/* ================= Appllama-style interaction pass ================= */
+:root{--focus:var(--ink);--shadow-panel:-24px 0 80px rgba(20,19,15,.16);--ease:cubic-bezier(.2,.8,.2,1)}
+.viz-root{-webkit-tap-highlight-color:transparent}
+::selection{background:var(--ink);color:var(--page)}
+:where(a,button,input,textarea,select,summary,[tabindex]):focus-visible{
+  outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+.tabs a{position:relative;min-height:44px;display:inline-flex;align-items:center}
+.tabs a::after{content:"";position:absolute;left:11px;right:11px;bottom:0;height:2px;background:var(--ink);
+  transform:scaleX(0);transform-origin:left;transition:transform .18s var(--ease)}
+.tabs a[aria-current="page"]::after{transform:scaleX(1)}
+.iconbtn{min-height:40px;min-width:40px}
+.btn{min-height:36px}
+.status,.seatstats b,.kv b,.lkpi b,.lrow .lvotes b,.cc-first .t,.num,.state-cell .mark{font-variant-numeric:tabular-nums}
+@media (hover:hover){
+  .chamber-card,.state-cell,.card{touch-action:manipulation}
+  .chamber-card:hover{border-color:var(--axis)}
+  .state-cell:hover{background:var(--wash)}
+  .btn:hover,.iconbtn:hover{border-color:var(--axis)}
+}
+@media (prefers-reduced-motion:no-preference){
+  .btn,.iconbtn,.chip,.state-cell,.tabs a{transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .12s var(--ease)}
+  .btn:active,.iconbtn:active,.chip:active{transform:scale(.97)}
+  .panel,.chamber-card{transition:border-color .18s ease}
+  .pill.live i{animation:livePulse 2.6s ease-out infinite}
+  #drawer{display:block;visibility:hidden;pointer-events:none}
+  #drawer.on{visibility:visible;pointer-events:auto}
+  #drawer .scrim{opacity:0;transition:opacity .25s ease}
+  #drawer.on .scrim{opacity:1}
+  #drawer .panel{transform:translateX(32px);opacity:0;box-shadow:var(--shadow-panel);
+    transition:transform .3s var(--ease),opacity .22s ease}
+  #drawer.on .panel{transform:none;opacity:1}
+  @keyframes livePulse{
+    0%{box-shadow:0 0 0 0 rgba(46,125,95,.35)}
+    70%{box-shadow:0 0 0 5px rgba(46,125,95,0)}
+    100%{box-shadow:0 0 0 0 rgba(46,125,95,0)}
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .btn:active,.iconbtn:active,.chip:active{transform:none}
+}
+
 </style>
 </head>
 <body>
