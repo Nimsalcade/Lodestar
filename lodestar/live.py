@@ -214,6 +214,21 @@ def run_live(forecast: dict, results: dict, lp: LiveParams | None = None) -> dic
     gov = chamber == "governor"
     dg = CHAMBERS["governor"]["not_up"]["D"] + (win[:, gov] & (d_side[gov] == "D")).sum(1)
 
+    # per-chamber coverage for the hub cards: called races, model projections,
+    # and races with a counted lead but no call yet
+    def race_counts(chamber: str) -> dict:
+        ids = [r["id"] for r in races if r["chamber"] == chamber]
+        called_ids = [rid for rid in ids if now.get(rid) and now[rid]["status"] == "called"]
+        projected_ids = [rid for rid in ids if now.get(rid) and (now[rid].get("call") or {}).get("projected")]
+        lead_d = [rid for rid in ids if now.get(rid) and now[rid]["status"] != "called"
+                  and now[rid]["counted_votes"] > 0 and now[rid]["p_d"] >= 0.5]
+        lead_r = [rid for rid in ids if now.get(rid) and now[rid]["status"] != "called"
+                  and now[rid]["counted_votes"] > 0 and now[rid]["p_d"] < 0.5]
+        called_d = [rid for rid in called_ids if now[rid]["p_d"] >= 0.5]
+        return {"total": len(ids), "called": len(called_ids), "projected": len(projected_ids),
+                "called_d": len(called_d), "called_r": len(called_ids) - len(called_d),
+                "leading_d": len(lead_d), "leading_r": len(lead_r)}
+
     # scorecard vs the locked pre-election forecast
     called = [(rid, nc) for rid, nc in now.items() if nc["status"] == "called"]
     pre = {r["id"]: r["p_d"] for r in races}
@@ -230,11 +245,12 @@ def run_live(forecast: dict, results: dict, lp: LiveParams | None = None) -> dic
         "chambers": {
             "senate": {"p_d_control": float((ds >= 51).mean()), "p_r_control": float((rs >= 50).mean()),
                        "d_median": float(np.median(ds)), "d_p10": float(np.percentile(ds, 10)),
-                       "d_p90": float(np.percentile(ds, 90))},
+                       "d_p90": float(np.percentile(ds, 90)), **race_counts("senate")},
             "house": {"p_d_control": float((dh >= 218).mean()), "p_r_control": float((rh >= 218).mean()),
                       "d_median": float(np.median(dh)), "d_p10": float(np.percentile(dh, 10)),
-                      "d_p90": float(np.percentile(dh, 90))},
-            "governor": {"p_d_majority": float((dg >= 26).mean()), "d_median": float(np.median(dg))},
+                      "d_p90": float(np.percentile(dh, 90)), **race_counts("house")},
+            "governor": {"p_d_majority": float((dg >= 26).mean()), "d_median": float(np.median(dg)),
+                         **race_counts("governor")},
             # Joint chamber outcomes, so the front page can quote a live
             # both-chambers chance instead of the locked pre-election one.
             "congress": {"d_both": float(((ds >= 51) & (dh >= 218)).mean()),

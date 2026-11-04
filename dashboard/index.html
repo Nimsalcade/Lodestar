@@ -749,6 +749,17 @@ function renderOverview(){
       h("b",null,`Democrats have a ${pct(con.d_both)} chance`)," to win both chambers; the House is the likelier pickup.");
   }
   const hbar=h("div",{class:"seatbar"},h("i",{style:"flex:435;background:var(--tu)"}),h("span",{class:"tick",style:"left:50%"}));
+  const liveFoot=(ch,total)=>{const x=lc&&lc[ch];const n=x?((x.projected||0)+(x.called||0)):0;
+    return `${n} of ${total} projected`;};
+  const liveBar=(ch,baseD,baseR,total,maj)=>{
+    const x=(lc&&lc[ch])||{};const wonD=baseD+(x.called_d||0),wonR=baseR+(x.called_r||0);
+    const leadD=x.leading_d||0,leadR=x.leading_r||0;
+    const rem=Math.max(0,total-wonD-wonR-leadD-leadR);
+    const seg=(n,color,op)=>n>0?h("i",{style:`flex:${n};background:${color};opacity:${op==null?1:op}`}):null;
+    const parts=[seg(wonD,"var(--dem)"),seg(leadD,"var(--dem)",.42),seg(rem,"var(--tu)"),
+      seg(leadR,"var(--rep)",.42),seg(wonR,"var(--rep)")].filter(Boolean);
+    return h("div",{class:"seatbar"},...parts,h("span",{class:"tick",style:`left:${100*maj/total}%`}));
+  };
   const liveNote=(ch,base)=>{const x=lc&&lc[ch];
     if(!x||x.d_median==null)return base;
     const range=x.d_p10!=null&&x.d_p90!=null?` · 80% range ${x.d_p10}–${x.d_p90}`:"";
@@ -756,20 +767,20 @@ function renderOverview(){
   $("#chamberCards").replaceChildren(
     chamberCard({title:"Senate",live:senLive,p:senLive?lc.senate.p_d_control:sen.p_d_control,badge:senLive?"Live":"Forecast",
       stats:[[rules.senate.not_up.D,"Democrats"],[35,"races"],[rules.senate.not_up.R,"Republicans"]],
-      bar:seatBar([[rules.senate.not_up.D,"var(--dem)",.55],[35,"var(--tu)",1],[rules.senate.not_up.R,"var(--rep)",.55]]),
+      bar:senLive?liveBar("senate",rules.senate.not_up.D,rules.senate.not_up.R,100,rules.senate.majority):seatBar([[rules.senate.not_up.D,"var(--dem)",.55],[35,"var(--tu)",1],[rules.senate.not_up.R,"var(--rep)",.55]]),
       labels:[`${rules.senate.not_up.D} not up`,`${rules.senate.majority} for control`,`${rules.senate.not_up.R} not up`],
-      close:CLOSE_SENATE,closeNote:senLive?"Live count · updating":"6 PM ET · IN, KY",foot:"35 races on the ballot",footLink:"Senate results →",href:"#senate",
+      close:CLOSE_SENATE,closeNote:senLive?"Live count · updating":"6 PM ET · IN, KY",foot:senLive?liveFoot("senate",35):"35 races on the ballot",footLink:"Senate results →",href:"#senate",
       note:senLive?liveNote("senate",`Median ${sen.d_seats.median} D seats`):`Median ${sen.d_seats.median} D seats · 80% range ${sen.d_seats.p10}–${sen.d_seats.p90}`}),
     chamberCard({title:"House",live:houLive,p:houLive?lc.house.p_d_control:hou.p_d_control,badge:houLive?"Live":"Forecast",
       stats:[[435,"seats on the ballot"],[rules.house.majority,"for control"]],
-      bar:hbar,labels:["435 seats","218 for control"],
-      close:CLOSE_SENATE,closeNote:houLive?"Live count · updating":"6 PM ET · IN, KY",foot:"435 seats on the ballot",footLink:"House results →",href:"#house",
+      bar:houLive?liveBar("house",0,0,435,218):hbar,labels:["435 seats","218 for control"],
+      close:CLOSE_SENATE,closeNote:houLive?"Live count · updating":"6 PM ET · IN, KY",foot:houLive?liveFoot("house",435):"435 seats on the ballot",footLink:"House results →",href:"#house",
       note:houLive?liveNote("house",`Median ${hou.d_seats.median} D seats`):`Median ${hou.d_seats.median} D seats · 80% range ${hou.d_seats.p10}–${hou.d_seats.p90}`}),
     chamberCard({title:"Governors",live:govLive,p:govLive?lc.governor.p_d_majority:gov.p_d_majority,badge:govLive?"Live":"Forecast",
       stats:[[rules.governor.not_up.D,"Democrats"],[36,"races"],[rules.governor.not_up.R,"Republicans"]],
-      bar:seatBar([[rules.governor.not_up.D,"var(--dem)",.55],[36,"var(--tu)",1],[rules.governor.not_up.R,"var(--rep)",.55]]),
+      bar:govLive?liveBar("governor",rules.governor.not_up.D,rules.governor.not_up.R,50,rules.governor.majority):seatBar([[rules.governor.not_up.D,"var(--dem)",.55],[36,"var(--tu)",1],[rules.governor.not_up.R,"var(--rep)",.55]]),
       labels:[`${rules.governor.not_up.D} not up`,`${rules.governor.majority} for a majority`,`${rules.governor.not_up.R} not up`],
-      close:CLOSE_GOV,closeNote:govLive?"Live count · updating":"7 PM ET · FL, GA, SC, VT",foot:"36 races on the ballot",footLink:"Governor results →",href:"#governors",
+      close:CLOSE_GOV,closeNote:govLive?"Live count · updating":"7 PM ET · FL, GA, SC, VT",foot:govLive?liveFoot("governor",36):"36 races on the ballot",footLink:"Governor results →",href:"#governors",
       note:govLive?liveNote("governor",`Median ${gov.d_seats.median} D governors`):`Median ${gov.d_seats.median} D governors · 80% range ${gov.d_seats.p10}–${gov.d_seats.p90}`}));
   renderWatch();renderCalls();renderClosings();renderStates();tickCountdown();
 }
@@ -847,6 +858,8 @@ function renderWatch(){
 }
 function renderCalls(){
   const el=$("#latestCalls");el.replaceChildren();
+  if(S.live&&S.live.updated){const t=new Date(S.live.updated);
+    if(!isNaN(t))el.append(h("div",{class:"kicker-note",style:"margin:2px 0 4px"},`As of ${t.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`));}
   const calls=[];
   if(S.live&&S.live.races)for(const[id,nc]of Object.entries(S.live.races)){
     const call=nc.call||{};if(!call.projected&&nc.status!=="called")continue;
@@ -1030,9 +1043,9 @@ function renderLive(){
   const t=(label,p0,p1,extra)=>h("div",{class:"card tile"},h("div",{class:"label"},label),h("div",{class:"value"},p1==null?pctSmart(p0):pctSmart(p1)),
     h("div",{class:"pbar"},h("i",{style:`width:${100*(p1==null?p0:p1)}%;background:var(--dem)`}),h("i",{style:`width:${100*(1-(p1==null?p0:p1))}%;background:var(--rep)`})),
     h("div",{class:"note"},p1==null?"Pre-election forecast (no results yet)":`Was ${pct(p0)} before results`),extra?h("div",{class:"note muted"},extra):null);
-  tiles.replaceChildren(t("Senate · Democratic control",pre.senate.p_d_control,L?L.chambers.senate.p_d_control:null,L?`Median ${L.chambers.senate.d_median} D seats`:null),
-    t("House · Democratic control",pre.house.p_d_control,L?L.chambers.house.p_d_control:null,L?`Median ${L.chambers.house.d_median} D seats (80%: ${L.chambers.house.d_p10}–${L.chambers.house.d_p90})`:null),
-    t("Governors · Democratic majority",pre.governor.p_d_majority,govLive?L.chambers.governor.p_d_majority:null,govLive?`Median ${L.chambers.governor.d_median}`:"No governor results yet"));
+  tiles.replaceChildren(t("Senate · Democratic control",pre.senate.p_d_control,L?L.chambers.senate.p_d_control:null,L?`${L.chambers.senate.called} of ${L.chambers.senate.total} called · Median ${L.chambers.senate.d_median} D seats`:null),
+    t("House · Democratic control",pre.house.p_d_control,L?L.chambers.house.p_d_control:null,L?`${L.chambers.house.called} of ${L.chambers.house.total} called · Median ${L.chambers.house.d_median} D seats`:null),
+    t("Governors · Democratic majority",pre.governor.p_d_majority,govLive?L.chambers.governor.p_d_majority:null,govLive?`${L.chambers.governor.called} of ${L.chambers.governor.total} called · Median ${L.chambers.governor.d_median}`:"No governor results yet"));
   const er=$("#liveError");er.replaceChildren();
   if(!L||!L.shared_error||!L.shared_error.n_obs){er.appendChild(h("p",{class:"sub"},"Waiting for races to approach full count."));}
   else{const se=L.shared_error;er.append(h("div",{class:"value",style:"font-size:30px;font-weight:650"},(se.national>=0?"Democrats +":"Republicans +")+Math.abs(se.national).toFixed(1)),
@@ -1046,7 +1059,7 @@ function renderLive(){
   const ch=segVal("#liveFilter")||"senate";let rs=S.f.races.filter(r=>r.chamber===ch&&!r.fixed);if(ch==="house")rs=rs.filter(r=>r.p_d>.05&&r.p_d<.95);
   rs.sort((a,b)=>Math.abs(a.p_d-.5)-Math.abs(b.p_d-.5));
   const tb=$("#liveTable");tb.replaceChildren(h("thead",null,h("tr",null,h("th",null,"Race"),h("th",null,"Status"),h("th",null,"Reporting"),h("th",{class:"num"},"Counted"),h("th",{class:"num"},"Proj. final"),h("th",{class:"num"},"Live D chance"),h("th",{class:"num"},"Pre-election"))),
-    h("tbody",null,...rs.map(r=>{const nc=L&&L.races&&L.races[r.id];const st=nc?nc.status:"awaiting";let cls=st,lab=st==="counting"?"Counting":st==="called"?"Called":"Awaiting";
+    h("tbody",null,...rs.map(r=>{const nc=L&&L.races&&L.races[r.id];const st=nc?nc.status:"awaiting";let cls=st,lab=st==="counting"?"Counting":st==="called"?"Called":"Awaiting votes";
       if(st==="called"){const w=nc.p_d>=.5?(r.d_side==="IND"?"i":"d"):"r";cls="called-"+w;lab=`Called ${w.toUpperCase()}`;}
       const liveP=nc?nc.p_d:null;return h("tr",{style:"cursor:pointer",onclick:()=>openLiveRace(r.id)},h("td",{style:"white-space:nowrap"},h("b",null,r.chamber==="house"?r.label:r.state_name+(r.special?" (sp.)":"")),h("div",{class:"muted",style:"font-size:12px;display:flex;align-items:center;gap:5px"},avatar(r,"d",18),lastName(r.d_cand),h("span",null,"vs"),avatar(r,"r",18),lastName(r.r_cand))),
         h("td",null,h("span",{class:"status "+cls},lab)),h("td",null,h("div",{class:"prog",role:"img","aria-label":`${nc?nc.pct_reporting:0}% reporting`},h("i",{style:`width:${nc?nc.pct_reporting:0}%`})),h("span",{class:"muted",style:"font-size:11.5px"},nc?nc.pct_reporting+"%":"0%")),

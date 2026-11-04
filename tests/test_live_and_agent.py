@@ -341,7 +341,7 @@ def test_civicapi_partial_fetch_keeps_one_query_when_the_other_fails(monkeypatch
 
     calls = []
 
-    def fake_fetch(q, limit=1000):
+    def fake_fetch(q, limit=1000, timeout=None):
         calls.append(q.get("election_type"))
         if q.get("election_type") == "Statewide":
             raise OSError("HTTP Error 503: Service Unavailable")
@@ -358,7 +358,7 @@ def test_civicapi_partial_fetch_keeps_one_query_when_the_other_fails(monkeypatch
 def test_civicapi_fetch_raises_only_when_every_query_fails(monkeypatch):
     import lodestar.sources.civicapi as civic
 
-    def always_fail(q, limit=1000):
+    def always_fail(q, limit=1000, timeout=None):
         raise OSError("503")
 
     monkeypatch.setattr(civic, "_fetch_query", always_fail)
