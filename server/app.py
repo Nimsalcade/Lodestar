@@ -87,6 +87,7 @@ class Hub:
         self.fetch_meta: dict = {}
         self._refresh_guard = threading.Lock()
         self._refresh_started: float | None = None
+        self._gov_fail_until = 0.0
         self.params = LiveParams()
         self.llm = LLM()
         self.state = State(self.forecast)
@@ -151,7 +152,8 @@ class Hub:
         try:
             meta = {}
             if self.source == "civicapi":
-                fresh, meta = feeds.civicapi_with_meta(self.forecast)
+                skip_gov = time.time() < self._gov_fail_until
+                fresh, meta = feeds.civicapi_with_meta(self.forecast, skip_gov=skip_gov)
                 with self.lock:
                     self.results.update(fresh)
             elif self.source == "demo":
@@ -164,6 +166,10 @@ class Hub:
                 # Partial coverage is not a failure: keep the results, but surface
                 # which query is lagging so the UI can say so.
                 self.last_error = ("partial: " + "; ".join(meta.get("errors") or [])[:280]) if meta.get("partial") else None
+            if any(str(e).startswith("Governor") for e in (meta.get("errors") or [])):
+                self._gov_fail_until = time.time() + 600
+            elif not skip_gov:
+                self._gov_fail_until = 0.0
             self.recompute()
             self._save_state()
         except Exception as e:
@@ -294,7 +300,8 @@ def lock_status():
 
 @app.get("/api/live")
 def live():
-    HUB.ensure_fresh()
+    if not ON_VERCEL:
+        HUB.ensure_fresh()
     if not HUB.live:
         return {"status": "no results yet", "source": HUB.source, "last_error": HUB.last_error,
                 "results_loaded": len(HUB.results), "fetch": HUB.fetch_meta,
@@ -307,6 +314,18 @@ def live():
     out["last_error"] = HUB.last_error
     out["fetch"] = HUB.fetch_meta
     return out
+
+
+@app.post("/api/live/refresh")
+def live_refresh():
+    """Refresh the feed without making the display poll wait for it.
+
+    The dashboard calls this in the background and keeps polling /api/live for
+    cached values, so a slow civicAPI query cannot freeze the page.
+    """
+    HUB.refresh()
+    return {"ok": not HUB.last_error, "results_loaded": len(HUB.results),
+            "last_error": HUB.last_error, "fetch": HUB.fetch_meta}
 
 
 class SourceReq(BaseModel):

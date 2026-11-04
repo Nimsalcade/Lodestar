@@ -1073,6 +1073,7 @@ function renderLive(){
   else if(LIVE.fetching) line="Fetching the first results from civicAPI — tonight's feed can take up to a minute. Retrying automatically.";
   else if(LIVE.error) line=`civicAPI is slow or rate-limited tonight — retrying automatically. ${LIVE.error}`.slice(0,240);
   else line="No results yet. The first polls close at 6 PM ET; counts arrive shortly after.";
+  if(LIVE.error)line+=` · retrying (${LIVE.error})`.slice(0,240);
   $("#liveLine").textContent=line;
 }
 
@@ -1139,13 +1140,19 @@ function openLiveRace(id){const r=S.byId[id];if(!r)return;LIVE.raceId=id;hideTip
   (async()=>{await pollLive(true);renderLiveRace();})();
   if(LIVE.timer)clearInterval(LIVE.timer);
   LIVE.timer=setInterval(async()=>{await pollLive(true);renderLiveRace();},60000);}
-const LIVE={lastPoll:0,raceId:null,timer:null,fetching:false,error:null};
+const LIVE={lastPoll:0,lastRefresh:0,raceId:null,timer:null,fetching:false,error:null};
+async function refreshLive(){if(S.mode!=="server")return;
+  try{await fetch("/api/live/refresh",{method:"POST"});}catch(e){}}
 async function pollLive(force){if(S.mode!=="server"||LIVE.fetching)return;
-  const now=Date.now();if(!force&&now-LIVE.lastPoll<3000)return;LIVE.lastPoll=now;LIVE.fetching=true;
-  try{const r=await (await fetch("/api/live")).json();
-    if(r.chambers){S.live=r;LIVE.error=null;}else{S.live=null;LIVE.error=r.last_error||null;}
+  const now=Date.now();if(!force&&now-LIVE.lastPoll<8000)return;LIVE.lastPoll=now;
+  if(now-LIVE.lastRefresh>60000){LIVE.lastRefresh=now;refreshLive();}
+  LIVE.fetching=true;const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);
+  try{const r=await (await fetch("/api/live",{signal:ctrl.signal})).json();
+    if(r.chambers){S.live=r;LIVE.error=null;}
+    else{LIVE.error=r.last_error||"results feed is warming up";}
     renderLive();setPill();if(S.view==="overview")renderOverview();
-  }catch(e){LIVE.error=String(e);}finally{LIVE.fetching=false;}}
+  }catch(e){LIVE.error=e.name==="AbortError"?"display poll timed out":String(e);}
+  finally{clearTimeout(timer);LIVE.fetching=false;}}
 segBind("#liveFilter",()=>renderLive());
 
 /* ===================================================================== analyst */
@@ -1240,7 +1247,7 @@ async function boot(){
     try{S.portraits=await (await fetch("/portraits/index.json")).json();}catch(e){S.portraits=null;}}
   S.f.races.forEach(r=>S.byId[r.id]=r);
   $("#asof").textContent=`Forecast as of ${S.f.meta.as_of} · election Nov 3`;setPill();renderMethod();rendered.live=0;route();
-  if(S.mode==="server"){pollLive();setInterval(pollLive,15000);}
+  if(S.mode==="server"){pollLive();setInterval(pollLive,8000);}
 }
 boot();
 </script>

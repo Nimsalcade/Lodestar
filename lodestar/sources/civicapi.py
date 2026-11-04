@@ -96,7 +96,7 @@ def _fetch_query(q: dict, limit: int = 1000, timeout: float | None = None) -> li
     return races
 
 
-def fetch_civicapi_partial(limit: int = 1000) -> tuple[list[dict], dict]:
+def fetch_civicapi_partial(limit: int = 1000, skip_gov: bool = False) -> tuple[list[dict], dict]:
     """Fetch each search sequentially, tolerating one failing query.
 
     Election-night 503/502s are per-query: the federal search can succeed while the
@@ -109,6 +109,8 @@ def fetch_civicapi_partial(limit: int = 1000) -> tuple[list[dict], dict]:
     errors: list[str] = []
     t0 = time.time()
     for q in QUERIES:
+        if skip_gov and q.get("query") == "Governor":
+            continue
         name = q.get("query") or q.get("election_type") or "query"
         # The statewide query is the flakiest and only covers 36 governors; cap it
         # so a hung request cannot hold the whole refresh (and the refresh lock).
@@ -214,9 +216,9 @@ def civicapi(forecast: dict) -> dict:
     return map_civic(fetch_civicapi(), forecast)
 
 
-def civicapi_with_meta(forecast: dict) -> tuple[dict, dict]:
+def civicapi_with_meta(forecast: dict, skip_gov: bool = False) -> tuple[dict, dict]:
     """Results plus a small provenance record for /api/live and /api/health."""
-    civic, fetch = fetch_civicapi_partial()
+    civic, fetch = fetch_civicapi_partial(skip_gov=skip_gov)
     if not civic:
         raise RuntimeError("; ".join(fetch["errors"]) or "civicAPI returned no races")
     results = map_civic(civic, forecast)
