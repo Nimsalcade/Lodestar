@@ -41,8 +41,11 @@ QUERIES = ({"election_type": "General"}, {"query": "Governor", "election_type": 
 # civicAPI's first uncached query can take 10-15 s; warm calls are ~0.2 s. On
 # serverless, allow enough headroom to finish that first query (Vercel Functions
 # run up to 300 s on Hobby) and let the next poll retry a transient failure.
-TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "30" if os.getenv("VERCEL") else "20"))
-RETRIES = int(os.getenv("CIVICAPI_RETRIES", "1" if os.getenv("VERCEL") else "3"))
+# Election-night queries have taken 20-60 s each. A 30 s cap was timing out before
+# the first page arrived; allow the request to finish and cap the whole search.
+TIMEOUT = float(os.getenv("CIVICAPI_TIMEOUT", "120" if os.getenv("VERCEL") else "40"))
+RETRIES = int(os.getenv("CIVICAPI_RETRIES", "1"))
+BUDGET = float(os.getenv("CIVICAPI_BUDGET", "240" if os.getenv("VERCEL") else "120"))
 
 
 def _get(url: str, timeout: float | None = None, retries: int | None = None) -> dict:
@@ -93,25 +96,49 @@ def _fetch_query(q: dict, limit: int = 1000) -> list[dict]:
     return races
 
 
-def fetch_civicapi(limit: int = 1000) -> list[dict]:
-    """Every race in the election, de-duplicated by civicAPI id.
+def fetch_civicapi_partial(limit: int = 1000) -> tuple[list[dict], dict]:
+    """Fetch each search sequentially, tolerating one failing query.
 
-    The two searches are disjoint in practice (governors only appear under
-    election_type=Statewide), but de-duplicating keeps a change on their side from
-    double-counting a race.
+    Election-night 503/502s are per-query: the federal search can succeed while the
+    statewide one fails. Sequential requests avoid tripping civicAPI's rate limiter,
+    and a failed query leaves the other one's results usable instead of blanking the
+    whole night. Returns (races, meta) where meta records partial coverage.
     """
-    with ThreadPoolExecutor(max_workers=len(QUERIES)) as pool:
-        batches = list(pool.map(lambda q: _fetch_query(q, limit), QUERIES))
-    seen: set = set()
     races: list[dict] = []
-    for batch in batches:
-        for r in batch:
-            key = r.get("id")
-            if key is not None and key in seen:
+    seen: set = set()
+    errors: list[str] = []
+    t0 = time.time()
+    for q in QUERIES:
+        name = q.get("query") or q.get("election_type") or "query"
+        for attempt in range(2):
+            if time.time() - t0 > BUDGET:
+                errors.append(f"{name}: time budget exhausted")
+                break
+            try:
+                batch = _fetch_query(q, limit)
+            except Exception as e:  # noqa: BLE001 - one bad query must not blank the night
+                errors.append(f"{name}: {type(e).__name__}: {e}")
+                if attempt == 0:
+                    time.sleep(2.0)
                 continue
-            if key is not None:
-                seen.add(key)
-            races.append(r)
+            for r in batch:
+                key = r.get("id")
+                if key is not None and key in seen:
+                    continue
+                if key is not None:
+                    seen.add(key)
+                races.append(r)
+            break
+    meta = {"queries": len(QUERIES), "errors": errors, "partial": bool(errors) and bool(races),
+            "elapsed_s": round(time.time() - t0, 1)}
+    return races, meta
+
+
+def fetch_civicapi(limit: int = 1000) -> list[dict]:
+    """Every race in the election. Raises only when no query produced any race."""
+    races, meta = fetch_civicapi_partial(limit)
+    if not races:
+        raise RuntimeError("; ".join(meta["errors"]) or "civicAPI returned no races")
     return races
 
 
@@ -184,13 +211,14 @@ def civicapi(forecast: dict) -> dict:
 
 def civicapi_with_meta(forecast: dict) -> tuple[dict, dict]:
     """Results plus a small provenance record for /api/live and /api/health."""
-    t0 = time.time()
-    civic = fetch_civicapi()
+    civic, fetch = fetch_civicapi_partial()
+    if not civic:
+        raise RuntimeError("; ".join(fetch["errors"]) or "civicAPI returned no races")
     results = map_civic(civic, forecast)
-    meta = {"source": "civicapi", "election_date": ELECTION, "elapsed_s": round(time.time() - t0, 1),
+    meta = {"source": "civicapi", "election_date": ELECTION,
             "races_returned": len(civic), "races_matched": len(results),
             "attribution": ATTRIBUTION,
-            "fetched_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+            "fetched_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), **fetch}
     return results, meta
 
 

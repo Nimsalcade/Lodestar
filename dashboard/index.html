@@ -1032,7 +1032,13 @@ function renderLive(){
         h("td",{class:"num"},nc&&nc.counted_margin!=null?mfmt(nc.counted_margin):"—"),h("td",{class:"num"},nc&&nc.est_margin!=null?mfmt(nc.est_margin):mfmt(r.margin.mean)),
         h("td",{class:"num"},liveP==null?"—":pctSmart(liveP)),h("td",{class:"num muted"},pctSmart(r.p_d)));})));
   const fresh=L?(L.stale?` · ⚠ feed is ${L.age_seconds==null?"":Math.round(L.age_seconds)+"s "}old`:(L.age_seconds!=null?` · ${Math.round(L.age_seconds)}s ago`:"")):"";
-  $("#liveLine").textContent=L?`Updated ${L.updated||"just now"} · source: ${L.source||"demo"}${L.attribution?" · "+L.attribution:""}${fresh}`:"Results update the forecast as votes are counted.";
+  const partial=L&&L.fetch&&L.fetch.partial?" · partial feed: governors may lag": "";
+  let line;
+  if(L) line=`Updated ${L.updated||"just now"} · source: ${L.source||"demo"}${L.attribution?" · "+L.attribution:""}${fresh}${partial}`;
+  else if(LIVE.fetching) line="Fetching the first results from civicAPI — tonight's feed can take up to a minute. Retrying automatically.";
+  else if(LIVE.error) line=`civicAPI is slow or rate-limited tonight — retrying automatically. ${LIVE.error}`.slice(0,240);
+  else line="No results yet. The first polls close at 6 PM ET; counts arrive shortly after.";
+  $("#liveLine").textContent=line;
 }
 
 /* ---- live race card: counted votes, remaining vote, each candidate, model's call ---- */
@@ -1098,10 +1104,13 @@ function openLiveRace(id){const r=S.byId[id];if(!r)return;LIVE.raceId=id;hideTip
   (async()=>{await pollLive(true);renderLiveRace();})();
   if(LIVE.timer)clearInterval(LIVE.timer);
   LIVE.timer=setInterval(async()=>{await pollLive(true);renderLiveRace();},60000);}
-const LIVE={lastPoll:0,raceId:null,timer:null};
-async function pollLive(force){if(S.mode!=="server")return;
-  const now=Date.now();if(!force&&now-LIVE.lastPoll<3000)return;LIVE.lastPoll=now;
-  try{const r=await (await fetch("/api/live")).json();S.live=r.chambers?r:null;renderLive();setPill();if(S.view==="overview")renderOverview();}catch(e){}}
+const LIVE={lastPoll:0,raceId:null,timer:null,fetching:false,error:null};
+async function pollLive(force){if(S.mode!=="server"||LIVE.fetching)return;
+  const now=Date.now();if(!force&&now-LIVE.lastPoll<3000)return;LIVE.lastPoll=now;LIVE.fetching=true;
+  try{const r=await (await fetch("/api/live")).json();
+    if(r.chambers){S.live=r;LIVE.error=null;}else{S.live=null;LIVE.error=r.last_error||null;}
+    renderLive();setPill();if(S.view==="overview")renderOverview();
+  }catch(e){LIVE.error=String(e);}finally{LIVE.fetching=false;}}
 segBind("#liveFilter",()=>renderLive());
 
 /* ===================================================================== analyst */
@@ -1195,7 +1204,7 @@ async function boot(){
   else{try{S.f=await (await fetch("/api/forecast")).json();S.mode="server";S.health=await (await fetch("/api/health")).json();}catch(e){document.body.textContent="Could not load forecast: "+e.message;return;}
     try{S.portraits=await (await fetch("/portraits/index.json")).json();}catch(e){S.portraits=null;}}
   S.f.races.forEach(r=>S.byId[r.id]=r);
-  $("#asof").textContent=`Forecast as of ${S.f.meta.as_of} · election Nov 3`;setPill();renderMethod();route();
+  $("#asof").textContent=`Forecast as of ${S.f.meta.as_of} · election Nov 3`;setPill();renderMethod();rendered.live=0;route();
   if(S.mode==="server"){pollLive();setInterval(pollLive,15000);}
 }
 boot();

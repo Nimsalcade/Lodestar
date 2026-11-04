@@ -333,3 +333,34 @@ def test_nowcast_reports_vote_totals_and_its_own_call():
                                  "r_votes": 5000, "pct_reporting": 95}, lp)
     assert called["call"]["source_called"] is True and called["call"]["projected"] is False
     assert called["call"]["source_winner"] == "D"
+
+
+def test_civicapi_partial_fetch_keeps_one_query_when_the_other_fails(monkeypatch):
+    """A flaky governors query must not blank the federal results on election night."""
+    import lodestar.sources.civicapi as civic
+
+    calls = []
+
+    def fake_fetch(q, limit=1000):
+        calls.append(q.get("election_type"))
+        if q.get("election_type") == "Statewide":
+            raise OSError("HTTP Error 503: Service Unavailable")
+        return [{"id": "federal-1"}, {"id": "federal-2"}]
+
+    monkeypatch.setattr(civic, "_fetch_query", fake_fetch)
+    races, meta = civic.fetch_civicapi_partial()
+    assert [r["id"] for r in races] == ["federal-1", "federal-2"]
+    assert meta["partial"] is True
+    assert any("503" in e for e in meta["errors"])
+    assert calls == ["General", "Statewide", "Statewide"]  # one retry before giving up
+
+
+def test_civicapi_fetch_raises_only_when_every_query_fails(monkeypatch):
+    import lodestar.sources.civicapi as civic
+
+    def always_fail(q, limit=1000):
+        raise OSError("503")
+
+    monkeypatch.setattr(civic, "_fetch_query", always_fail)
+    with pytest.raises(RuntimeError):
+        civic.fetch_civicapi()

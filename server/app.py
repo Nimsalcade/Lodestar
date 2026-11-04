@@ -43,11 +43,11 @@ WRITABLE = Path("/tmp") if ON_VERCEL else ROOT / "output"
 LIVE_OUT = Path(os.getenv("LIVE_OUT_PATH", WRITABLE / "live.json"))
 STATE_OUT = Path(os.getenv("LIVE_STATE_PATH", WRITABLE / "live_state.json"))
 POLL_SECONDS = int(os.getenv("LIVE_POLL_SECONDS", "30"))
-STALE_AFTER = float(os.getenv("LIVE_STALE_SECONDS", str(max(90, 3 * POLL_SECONDS))))
-# On a serverless host nothing keeps polling between requests, so /api/live pulls
-# the feed itself when its numbers are older than this (civicAPI answers in well
-# under a second once warm).
-AUTOREFRESH_SECONDS = int(os.getenv("LIVE_AUTOREFRESH_SECONDS", str(min(POLL_SECONDS, 15))))
+# civicAPI has taken 20-60 s per query tonight, so a 15 s cache would start a new
+# slow refresh before the previous one could be served. Cache for two minutes on
+# serverless and mark the feed stale only after five.
+STALE_AFTER = float(os.getenv("LIVE_STALE_SECONDS", "600" if ON_VERCEL else str(max(90, 3 * POLL_SECONDS))))
+AUTOREFRESH_SECONDS = int(os.getenv("LIVE_AUTOREFRESH_SECONDS", "180" if ON_VERCEL else str(min(POLL_SECONDS, 15))))
 
 
 def _now() -> str:
@@ -159,7 +159,9 @@ class Hub:
             with self.lock:
                 self.fetch_meta = meta
                 self.last_fetch = time.time()
-                self.last_error = None
+                # Partial coverage is not a failure: keep the results, but surface
+                # which query is lagging so the UI can say so.
+                self.last_error = ("partial: " + "; ".join(meta.get("errors") or [])[:280]) if meta.get("partial") else None
             self.recompute()
             self._save_state()
         except Exception as e:
@@ -170,10 +172,13 @@ class Hub:
     # ---------------------------------------------------------------- health
     def set_source(self, source: str):
         with self.lock:
-            self.source = source
-            if source == "none":
+            changed = source != self.source
+            if changed or source == "none":
+                # Never blend feeds: demo results surviving into a civicAPI count
+                # would look like real votes.
                 self.results, self.live, self.fetch_meta = {}, None, {}
                 self.state.live = None
+            self.source = source
         if source == "none":
             self._save_state()
         else:
@@ -283,11 +288,15 @@ def live():
     HUB.ensure_fresh()
     if not HUB.live:
         return {"status": "no results yet", "source": HUB.source, "last_error": HUB.last_error,
+                "results_loaded": len(HUB.results), "fetch": HUB.fetch_meta,
                 "attribution": feeds.ATTRIBUTION if HUB.source == "civicapi" else None}
     out = dict(HUB.live)
     age = HUB.live_age()
     out["age_seconds"] = age
     out["stale"] = bool(age is not None and age > STALE_AFTER)
+    out["results_loaded"] = len(HUB.results)
+    out["last_error"] = HUB.last_error
+    out["fetch"] = HUB.fetch_meta
     return out
 
 
