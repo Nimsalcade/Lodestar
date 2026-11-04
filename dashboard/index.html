@@ -1006,12 +1006,13 @@ function renderLiveControls(){const el=$("#liveControls");el.replaceChildren();
   }}
 function renderLive(){
   const L=S.live,pre=S.f.chambers;const tiles=$("#liveTiles");
+  const govLive=!!(L&&L.races&&Object.entries(L.races).some(([id,v])=>id.startsWith("governor:")&&(v.d_votes+v.r_votes)>0));
   const t=(label,p0,p1,extra)=>h("div",{class:"card tile"},h("div",{class:"label"},label),h("div",{class:"value"},p1==null?pctSmart(p0):pctSmart(p1)),
     h("div",{class:"pbar"},h("i",{style:`width:${100*(p1==null?p0:p1)}%;background:var(--dem)`}),h("i",{style:`width:${100*(1-(p1==null?p0:p1))}%;background:var(--rep)`})),
     h("div",{class:"note"},p1==null?"Pre-election forecast (no results yet)":`Was ${pct(p0)} before results`),extra?h("div",{class:"note muted"},extra):null);
   tiles.replaceChildren(t("Senate · Democratic control",pre.senate.p_d_control,L?L.chambers.senate.p_d_control:null,L?`Median ${L.chambers.senate.d_median} D seats`:null),
     t("House · Democratic control",pre.house.p_d_control,L?L.chambers.house.p_d_control:null,L?`Median ${L.chambers.house.d_median} D seats (80%: ${L.chambers.house.d_p10}–${L.chambers.house.d_p90})`:null),
-    t("Governors · Democratic majority",pre.governor.p_d_majority,L?L.chambers.governor.p_d_majority:null,L?`Median ${L.chambers.governor.d_median}`:null));
+    t("Governors · Democratic majority",pre.governor.p_d_majority,govLive?L.chambers.governor.p_d_majority:null,govLive?`Median ${L.chambers.governor.d_median}`:"No governor results yet"));
   const er=$("#liveError");er.replaceChildren();
   if(!L||!L.shared_error||!L.shared_error.n_obs){er.appendChild(h("p",{class:"sub"},"Waiting for races to approach full count."));}
   else{const se=L.shared_error;er.append(h("div",{class:"value",style:"font-size:30px;font-weight:650"},(se.national>=0?"Democrats +":"Republicans +")+Math.abs(se.national).toFixed(1)),
