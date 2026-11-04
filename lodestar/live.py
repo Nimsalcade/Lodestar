@@ -235,6 +235,10 @@ def run_live(forecast: dict, results: dict, lp: LiveParams | None = None) -> dic
                       "d_median": float(np.median(dh)), "d_p10": float(np.percentile(dh, 10)),
                       "d_p90": float(np.percentile(dh, 90))},
             "governor": {"p_d_majority": float((dg >= 26).mean()), "d_median": float(np.median(dg))},
+            # Joint chamber outcomes, so the front page can quote a live
+            # both-chambers chance instead of the locked pre-election one.
+            "congress": {"d_both": float(((ds >= 51) & (dh >= 218)).mean()),
+                         "r_both": float(((rs >= 50) & (rh >= 218)).mean())},
         },
         "races": now,
         "race_p_d": {rid: round(float(win[:, j].mean()), 4) for j, rid in enumerate(ids)},
